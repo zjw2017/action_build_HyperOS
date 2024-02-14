@@ -239,7 +239,7 @@ jobs:
       - if: ${{ github.event.inputs.pan123 == 'true' }}
         name: 上传到123盘
         run: |
-          python3 "$GITHUB_WORKSPACE"/tools/python/123pan.py ${{ secrets.CLIENTID }} ${{ secrets.CLIENTSECRET }} 3646399 "$GITHUB_WORKSPACE"/zip/"$NEW_PACKAGE_NAME"
+          python3 "$GITHUB_WORKSPACE"/tools/python/123pan.py ${{ secrets.CLIENTID }} ${{ secrets.CLIENTSECRET }} 4153611 "$GITHUB_WORKSPACE"/zip/"$NEW_PACKAGE_NAME"
       - name: 发送打包成功通知
         run: |
           if [[ "$device" == "umi" ]]; then
