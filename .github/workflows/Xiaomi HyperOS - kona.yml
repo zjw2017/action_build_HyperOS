@@ -7,8 +7,8 @@ on:
         type: string
         default: "865"
         required: true
-      INFO:
-        description: "待操作的系统代号(小写)和版本号和安卓版本号(以英文逗号分隔)或直接输入下载链接"
+      URL:
+        description: "待操作的系统包下载地址"
         required: true
         type: string
       custom_version:
@@ -58,37 +58,6 @@ on:
         type: boolean
         default: true 
 jobs:
-  url-get:
-    name: 下载链接获取
-    runs-on: ubuntu-latest
-    outputs:
-      URL: ${{ steps.generate_url.outputs.URL }}
-    steps:
-      - uses: actions/checkout@v4.1.1
-        with:
-          repository: Weverses/ActionBuildCasSystemT
-          token: ${{ secrets.GH_TOKEN }}
-          sparse-checkout: |
-            cookies.json
-            tools/python/XiaomiUpdateInfo.py
-          sparse-checkout-cone-mode: false
-      - name: 下载链接获取
-        id: generate_url
-        run: |
-          if [[ "$INFO" == *http* ]]; then
-            echo "URL=$(echo $INFO)" >> "$GITHUB_OUTPUT"
-          else
-            sudo apt-get install python3
-            pip3 install pycryptodome
-            pip3 install requests
-            target_device=$(echo $INFO | cut -d"," -f1)
-            target_version=$(echo $INFO | cut -d"," -f2)
-            target_android_version=$(echo $INFO | cut -d"," -f3)
-            URL=$(python3 "$GITHUB_WORKSPACE"/tools/python/XiaomiUpdateInfo.py $target_device $target_version $target_android_version)
-            echo "URL=$(echo $URL | grep -oP 'download: \K\S+')" >> "$GITHUB_OUTPUT"
-          fi
-        env:
-          INFO: ${{ inputs.INFO }}
   build_matrix:
     name: 设置构建阵列
     runs-on: ubuntu-latest
@@ -117,7 +86,7 @@ jobs:
   build:
     name: 自动构建
     runs-on: ubuntu-latest
-    needs: [url-get, build_matrix]
+    needs: build_matrix
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.build_matrix.outputs.matrix) }}
@@ -193,14 +162,14 @@ jobs:
           fi
         env:
           MATRIX_CONTEXT: ${{ toJson(matrix) }}
-          URL: ${{ needs.url-get.outputs.URL }}
+          URL: ${{ inputs.URL }}
       - name: 自动构建
         run: |
           device=$(echo "$MATRIX_CONTEXT" | jq -r '.list.device')
           bash build_local.sh $URL $device $custom_version $pack_version $VK $data $pack_type
         env:
           MATRIX_CONTEXT: ${{ toJson(matrix) }}
-          URL: ${{ needs.url-get.outputs.URL }}
+          URL: ${{ inputs.URL }}
           custom_version: ${{ inputs.custom_version }}
           pack_version: ${{ inputs.pack_version }}
           VK: ${{ inputs.VK }}
