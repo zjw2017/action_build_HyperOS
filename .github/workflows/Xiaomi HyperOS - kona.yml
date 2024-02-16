@@ -162,6 +162,11 @@ jobs:
         run: |
           device=$(echo "$MATRIX_CONTEXT" | jq -r '.list.device')
           bash build_local_HyperOS.sh $URL $device $custom_version $pack_version $VK $data $pack_type
+          source "$GITHUB_WORKSPACE"/PackageInfo.txt
+          echo "NEW_PACKAGE_NAME=$NEW_PACKAGE_NAME" >> "$GITHUB_ENV"
+          echo "NEW_PACKAGE_NAME=$NEW_PACKAGE_NAME" >> "$GITHUB_OUTPUT"
+          echo "MD5=$MD5" >> "$GITHUB_ENV"
+          echo "MD5=$MD5" >> "$GITHUB_OUTPUT"
         env:
           MATRIX_CONTEXT: ${{ toJson(matrix) }}
           URL: ${{ inputs.URL }}
@@ -173,9 +178,6 @@ jobs:
       - if: github.event.inputs.GithubRelease == 'true'
         name: 处理包
         run: |
-          source "$GITHUB_WORKSPACE"/PackageInfo.txt
-          echo "MD5=$MD5" >> "$GITHUB_ENV"
-          echo "NEW_PACKAGE_NAME=$NEW_PACKAGE_NAME" >> "$GITHUB_ENV"
           mkdir -p "$GITHUB_WORKSPACE"/GithubRelease
           cd "$GITHUB_WORKSPACE"/GithubRelease
           sudo split -b 1536M -d "$GITHUB_WORKSPACE"/zip/"$NEW_PACKAGE_NAME" "$NEW_PACKAGE_NAME"
