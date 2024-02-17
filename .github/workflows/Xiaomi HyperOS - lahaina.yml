@@ -55,6 +55,21 @@ jobs:
           json_output=${json_output%,}
           json_output+="]}"
           echo "matrix=$json_output" >> $GITHUB_OUTPUT
+  removeRelease:
+    if: github.event.inputs.GithubRelease == 'true'
+    name: 删除 ${{ inputs.custom_version }} 的 Github Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: 删除 ${{ inputs.custom_version }} 的 Github Release
+        uses: ncipollo/release-action@main
+        with:
+          owner: zjw2017
+          repo: action_build_lahaina_system
+          name: "${{ inputs.custom_version }}"
+          tag: "${{ inputs.custom_version }}"
+          allowUpdates: true
+          removeArtifacts: true
+          token: ${{ secrets.GH_TOKEN }}
   build:
     name: 自动构建
     runs-on: ubuntu-latest
