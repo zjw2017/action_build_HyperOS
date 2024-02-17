@@ -125,7 +125,8 @@ jobs:
       - name: 发送开始构建通知
         run: |
           device=$(echo "$MATRIX_CONTEXT" | jq -r '.list.device')
-          date=$custom_version
+          echo "device=$device" >> "$GITHUB_ENV"
+          echo "date=$date" >> "$GITHUB_ENV"
           if [[ "$device" == "umi" ]]; then
             curl -i -X POST -H 'Content-type':'application/json' -d '{"token":"${{ secrets.appToken }}","title":"小米10 '"$date"'开始构建","content":" **小米10 '"$date"'开始构建** ","topic":"umi","template":"markdown"}' http://www.pushplus.plus/send || true
           elif [[ "$device" == "cmi" ]]; then
@@ -141,10 +142,9 @@ jobs:
           fi
         env:
           MATRIX_CONTEXT: ${{ toJson(matrix) }}
-          custom_version: ${{ inputs.custom_version }}
+          date: ${{ inputs.custom_version }}
       - name: 下载系统包
         run: |
-          device=$(echo "$MATRIX_CONTEXT" | jq -r '.list.device')
           sudo apt-get install python3 aria2 p7zip-full zstd unzip zipalign
           sudo bash "$GITHUB_WORKSPACE"/tools/install_rclone.sh ${{ secrets.GH_TOKEN }}
           mkdir -p ~/.config/rclone/
@@ -171,11 +171,9 @@ jobs:
             aria2c -x16 -j$(nproc) -U "Mozilla/5.0" -d "$GITHUB_WORKSPACE" "$URL"
           fi
         env:
-          MATRIX_CONTEXT: ${{ toJson(matrix) }}
           URL: ${{ inputs.URL }}
       - name: 自动构建
         run: |
-          device=$(echo "$MATRIX_CONTEXT" | jq -r '.list.device')
           bash build_local_HyperOS.sh $URL $device $custom_version $pack_version $VK $data $pack_type
           source "$GITHUB_WORKSPACE"/PackageInfo.txt
           echo "NEW_PACKAGE_NAME=$NEW_PACKAGE_NAME" >> "$GITHUB_ENV"
@@ -183,7 +181,6 @@ jobs:
           echo "MD5=$MD5" >> "$GITHUB_ENV"
           echo "MD5=$MD5" >> "$GITHUB_OUTPUT"
         env:
-          MATRIX_CONTEXT: ${{ toJson(matrix) }}
           URL: ${{ inputs.URL }}
           custom_version: ${{ inputs.custom_version }}
           pack_version: ${{ inputs.pack_version }}
