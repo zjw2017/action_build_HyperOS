@@ -249,6 +249,23 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
+      - name: 精简无用组件
+        run: |
+          docker rmi `docker images -q` || true
+          sudo rm -rf /usr/share/dotnet /etc/mysql /etc/php /etc/sudo apt/sources.list.d || true
+          sudo apt -y purge azure-cli ghc* zulu* hhvm llvm* firefox google* dotnet* powershell openjdk* mysql* php* || true
+          sudo apt -y autoremove --purge || true
+          sudo apt -y autoclean || true
+          sudo apt clean || true
+      - name: 最大化并挂载构建空间
+        uses: easimon/maximize-build-space@master
+        with:
+          root-reserve-mb: 1024
+          swap-size-mb: 6144
+          remove-dotnet: "true"
+          temp-reserve-mb: 1024
+          remove-android: "true"
+          remove-haskell: "true"
       - name: 下载 123pan.py
         uses: actions/checkout@v4.1.1
         with:
