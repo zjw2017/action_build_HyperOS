@@ -132,7 +132,6 @@ jobs:
       - name: 发送开始构建通知
         run: |
           device=$(echo "$MATRIX_CONTEXT" | jq -r '.list.device')
-          date=$custom_version
           if [[ "$device" == "umi" ]]; then
             curl -i -X POST -H 'Content-type':'application/json' -d '{"token":"${{ secrets.appToken }}","title":"小米10 '"$date"'开始构建","content":" **小米10 '"$date"'开始构建** ","topic":"umi","template":"markdown"}' http://www.pushplus.plus/send || true
           elif [[ "$device" == "cmi" ]]; then
@@ -148,7 +147,7 @@ jobs:
           fi
         env:
           MATRIX_CONTEXT: ${{ toJson(matrix) }}
-          custom_version: ${{ inputs.custom_version }}
+          date: ${{ inputs.custom_version }}
       - name: 下载系统包
         run: |
           device=$(echo "$MATRIX_CONTEXT" | jq -r '.list.device')
@@ -243,6 +242,7 @@ jobs:
           fi
         env:
           MATRIX_CONTEXT: ${{ toJson(matrix) }}
+          date: ${{ inputs.custom_version }}
   pan123_upload:
     if: github.event.inputs.pan123 == 'true'
     name: 上传到123盘
