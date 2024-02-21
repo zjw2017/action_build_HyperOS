@@ -63,8 +63,6 @@ jobs:
   accessToken_update:
     name: 更新 accessToken
     runs-on: ubuntu-latest
-    outputs:
-      accessToken: ${{ steps.export_accessToken.outputs.accessToken }}
     steps:
       - uses: actions/checkout@v4.1.1
         with:
@@ -105,7 +103,6 @@ jobs:
             git commit -m "更新 accessToken"
             git push
           fi
-          echo "accessToken=$accessToken" >> "$GITHUB_OUTPUT"
   removeRelease:
     if: github.event.inputs.GithubRelease == 'true' || github.event.inputs.pan123 == 'true'
     name: 删除 ${{ inputs.custom_version }} 的 Github Release
@@ -266,12 +263,13 @@ jobs:
           temp-reserve-mb: 1024
           remove-android: "true"
           remove-haskell: "true"
-      - name: 下载 upload.sh
+      - name: 下载 123盘相关文件
         uses: actions/checkout@v4.1.1
         with:
           repository: Weverses/ActionBuildCasSystemT
           token: ${{ secrets.GH_TOKEN }}
           sparse-checkout: |
+            tools/123pan_info.txt
             tools/upload.sh
           sparse-checkout-cone-mode: false
       - name: 下载 Github Release
@@ -284,6 +282,7 @@ jobs:
       - name: 合并分卷并上传
         run: |
           success=0
+          source "$GITHUB_WORKSPACE"/tools/123pan_info.txt
           find . -type f -name '*zip00*' -print0 | while IFS= read -r -d '' files; do
             file=$(basename "$files")
             zip_name="${file%.*}.zip"
