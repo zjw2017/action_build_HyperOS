@@ -82,6 +82,52 @@ jobs:
           json_output=${json_output%,}
           json_output+="]}"
           echo "matrix=$json_output" >> $GITHUB_OUTPUT
+  accessToken_update:
+    name: 更新 accessToken
+    runs-on: ubuntu-latest
+    outputs:
+      accessToken: ${{ steps.export_accessToken.outputs.accessToken }}
+    steps:
+      - uses: actions/checkout@v4.1.1
+        with:
+          repository: Weverses/ActionBuildCasSystemT
+          token: ${{ secrets.GH_TOKEN }}
+          sparse-checkout: |
+            tools/123pan_info.txt
+          sparse-checkout-cone-mode: false
+      - name: 更新 accessToken
+        id: export_accessToken
+        run: |
+          clientID="${{ secrets.CLIENTID }}"
+          clientSecret="${{ secrets.CLIENTSECRET }}"
+          source "$GITHUB_WORKSPACE"/tools/123pan_info.txt
+          current_timestamp=$(date +%s)
+          expired_timestamp=$(date -d "$expiredAt" +%s)
+          if [ "$current_timestamp" -lt "$expired_timestamp" ]; then
+            echo "access_token 未过期"
+          else
+            echo "access_token 已过期"
+            post_context=$(
+              curl -X POST \
+                -H "Content-Type: application/json" \
+                -H "Platform: open_platform" \
+                -d "{
+                  \"clientID\": \"$clientID\",
+                  \"clientSecret\": \"$clientSecret\"
+                }" \
+                "https://open-api.123pan.com/api/v1/access_token"
+            )
+            accessToken=$(echo $post_context | jq -r .data.accessToken)
+            expiredAt=$(echo $post_context | jq -r .data.expiredAt)
+            echo "accessToken=\"$accessToken\"" >"$GITHUB_WORKSPACE"/tools/123pan_info.txt
+            echo "expiredAt=\"$expiredAt\"" >>"$GITHUB_WORKSPACE"/tools/123pan_info.txt
+            git config --global user.email "30484319+zjw2017@users.noreply.github.com"
+            git config --global user.name "柚稚的孩纸"
+            git add "$GITHUB_WORKSPACE"/tools/123pan_info.txt
+            git commit -m "更新 accessToken"
+            git push
+          fi
+          echo "accessToken=$accessToken" >> "$GITHUB_OUTPUT"
   removeRelease:
     if: github.event.inputs.GithubRelease == 'true' || github.event.inputs.pan123 == 'true'
     name: 删除 ${{ inputs.custom_version }} 的 Github Release
@@ -247,7 +293,7 @@ jobs:
     if: github.event.inputs.pan123 == 'true'
     name: 上传到123盘
     runs-on: ubuntu-latest
-    needs: build
+    needs: [build, accessToken_update]
     steps:
       - name: 精简无用组件
         run: |
@@ -266,13 +312,13 @@ jobs:
           temp-reserve-mb: 1024
           remove-android: "true"
           remove-haskell: "true"
-      - name: 下载 123pan.py
+      - name: 下载 upload.sh
         uses: actions/checkout@v4.1.1
         with:
           repository: Weverses/ActionBuildCasSystemT
           token: ${{ secrets.GH_TOKEN }}
           sparse-checkout: |
-            tools/python/123pan.py
+            tools/upload.sh
           sparse-checkout-cone-mode: false
       - name: 下载 Github Release
         uses: robinraju/release-downloader@v1.9
@@ -292,7 +338,7 @@ jobs:
               mv merged_file.zip "$zip_name"
               echo "成功创建 ${zip_name}"
               echo "开始上传 ${zip_name}"
-              if python3 "$GITHUB_WORKSPACE"/tools/python/123pan.py ${{ secrets.CLIENTID }} ${{ secrets.CLIENTSECRET }} 4153611 "$GITHUB_WORKSPACE"/"$zip_name"; then
+              if bash "$GITHUB_WORKSPACE"/tools/upload.sh $accessToken "$GITHUB_WORKSPACE"/"$zip_name" 4153611; then
                 echo "成功上传 ${zip_name}"
                 success=$((success + 1))
                 device=$(echo $zip_name | cut -d"_" -f2)
@@ -322,6 +368,7 @@ jobs:
             exit 1
           fi
         env:
+          accessToken: ${{ needs.accessToken_update.outputs.accessToken }}
           date: ${{ inputs.custom_version }}
           NEW_PACKAGE_NAME: ${{ needs.build.outputs.NEW_PACKAGE_NAME }}
           MD5: ${{ needs.build.outputs.MD5 }}
