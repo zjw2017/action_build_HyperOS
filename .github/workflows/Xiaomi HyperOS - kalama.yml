@@ -123,6 +123,14 @@ jobs:
         env:
           ORIGIN_URL: ${{ inputs.ORIGIN_URL }}
           URL: ${{ inputs.URL }}
+      - name: 下载 TWRP
+        uses: robinraju/release-downloader@v1.9
+        with:
+            repository: zjw2017/TWRP_Backup
+            tag: "twrp"
+            fileName: "*${{ env.device }}*"
+            out-file-path: "${{ env.device }}_files"
+            token: ${{ secrets.GH_TOKEN }}
       - name: 自动构建
         id: auto-build
         run: |
