@@ -182,8 +182,8 @@ jobs:
         with:
             repository: zjw2017/TWRP_Backup
             tag: "twrp"
-            fileName: "*{{ env.device }}*"
-            out-file-path: "{{ env.device }}_files"
+            fileName: "*${{ env.device }}*"
+            out-file-path: "${{ env.device }}_files"
             token: ${{ secrets.GH_TOKEN }}
       - name: 自动构建
         id: auto-build
