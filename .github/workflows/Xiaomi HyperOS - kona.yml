@@ -55,7 +55,7 @@ on:
         description: "123盘"
         required: true
         type: boolean
-        default: true
+        default: false
 jobs:
   build_matrix:
     name: 设置构建阵列
