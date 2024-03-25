@@ -1,0 +1,172 @@
+name: Xiaomi HyperOS - kalama
+on:
+  workflow_dispatch:
+    inputs:
+      build_matrix:
+        description: "构建阵列，以英文逗号分隔"
+        type: string
+        default: "ishtar"
+        required: true
+      ORIGIN_URL:
+        description: "底包的下载地址"
+        required: true
+        type: string
+      URL:
+        description: "移植包的下载地址"
+        required: true
+        type: string
+      custom_version:
+        description: "自定义版本号"
+        required: true
+        type: string
+      OneDrive:
+        description: "OneDrive"
+        required: true
+        type: boolean
+        default: true
+      GithubRelease:
+        description: "Github Release"
+        required: true
+        type: boolean
+        default: true
+jobs:
+  build_matrix:
+    name: 设置构建阵列
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: 设置构建阵列
+        id: set-matrix
+        run: |
+          input_var="${{ github.event.inputs.build_matrix }}"
+          if [ "$input_var" = "all" ]; then
+            input_var="ishtar"
+          fi
+          IFS=',' read -ra devices <<< "$input_var"
+          json_output="{\"list\":["
+          for device in "${devices[@]}"; do
+            json_output+="{\"device\":\"$device\"},"
+          done
+          json_output=${json_output%,}
+          json_output+="]}"
+          echo "matrix=$json_output" >> $GITHUB_OUTPUT
+  removeRelease:
+    if: github.event.inputs.GithubRelease == 'true'
+    name: 删除 ${{ inputs.custom_version }} 的 Github Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: 删除 ${{ inputs.custom_version }} 的 Github Release
+        uses: ncipollo/release-action@main
+        with:
+          owner: zjw2017
+          repo: action_build_kalama_system
+          name: "${{ inputs.custom_version }}"
+          tag: "${{ inputs.custom_version }}"
+          allowUpdates: true
+          removeArtifacts: true
+          token: ${{ secrets.GH_TOKEN }}
+  build:
+    name: 自动构建
+    runs-on: ubuntu-latest
+    needs: build_matrix
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.build_matrix.outputs.matrix) }}
+    steps:
+      - name: 精简无用组件
+        run: |
+          docker rmi `docker images -q` || true
+          sudo rm -rf /usr/share/dotnet /etc/mysql /etc/php /etc/sudo apt/sources.list.d || true
+          sudo apt -y purge azure-cli ghc* zulu* hhvm llvm* firefox google* dotnet* powershell openjdk* mysql* php* || true
+          sudo apt -y autoremove --purge || true
+          sudo apt -y autoclean || true
+          sudo apt clean || true
+      - name: 最大化并挂载构建空间
+        uses: easimon/maximize-build-space@master
+        with:
+          root-reserve-mb: 1024
+          swap-size-mb: 6144
+          remove-dotnet: "true"
+          temp-reserve-mb: 1024
+          remove-android: "true"
+          remove-haskell: "true"
+      - name: 检出仓库文件
+        uses: actions/checkout@v4.1.1
+        with:
+          repository: zjw2017/action_build_kalama_system
+          token: ${{ secrets.GH_TOKEN }}
+      - name: 发送开始构建通知
+        run: |
+          device=$(echo "$MATRIX_CONTEXT" | jq -r '.list.device')
+          echo "device=$device" >> "$GITHUB_ENV"
+          if [[ "$device" == "ishtar" ]]; then
+            curl -i -X POST -H 'Content-type':'application/json' -d '{"token":"${{ secrets.appToken }}","title":"Xiaomi 13 Ultra '"$date"'开始构建","content":" **Xiaomi 13 Ultra '"$date"'开始构建** ","topic":"lahaina","template":"markdown"}' http://www.pushplus.plus/send || true
+          fi
+        env:
+          MATRIX_CONTEXT: ${{ toJson(matrix) }}
+          date: ${{ inputs.custom_version }}
+      - name: 下载系统包
+        run: |
+          sudo apt-get install python3 aria2 p7zip-full zstd unzip
+          sudo bash "$GITHUB_WORKSPACE"/tools/install_rclone.sh ${{ secrets.GH_TOKEN }}
+          mkdir -p ~/.config/rclone/
+          unzip -o -q -P ${{ secrets.PASSWORD }} "$GITHUB_WORKSPACE"/tools/rclone_config.zip -d ~/.config/rclone/
+          ORIGIN_ZIP_NAME=$(echo $ORIGIN_URL | sed 's/.*\(miui_.*\.zip\).*/\1/')
+          TARGET_ZIP_NAME=$(echo $URL | sed 's/.*\(miui_.*\.zip\).*/\1/')
+          aria2c -x16 -j$(nproc) -U "Mozilla/5.0" -d "$GITHUB_WORKSPACE" "$ORIGIN_URL"
+          if [[ "$URL" == *PrePackages* ]]; then
+            rclone copy OneDrive:/MI_Packages/RubbishBin/PrePackages/"$TARGET_ZIP_NAME" "$GITHUB_WORKSPACE"
+          elif [[ "$URL" != "$ORIGIN_URL" ]]; then
+            aria2c -x16 -j$(nproc) -U "Mozilla/5.0" -d "$GITHUB_WORKSPACE" "$URL"
+          fi
+        env:
+          ORIGIN_URL: ${{ inputs.ORIGIN_URL }}
+          URL: ${{ inputs.URL }}
+      - name: 自动构建
+        id: auto-build
+        run: |
+          sudo bash build_local_HyperOS.sh $ORIGIN_URL $URL $device $custom_version
+          source "$GITHUB_WORKSPACE"/PackageInfo.txt
+          echo "NEW_PACKAGE_NAME=$NEW_PACKAGE_NAME" >> "$GITHUB_ENV"
+          echo "NEW_PACKAGE_NAME=$NEW_PACKAGE_NAME" >> "$GITHUB_OUTPUT"
+          echo "MD5=$MD5" >> "$GITHUB_ENV"
+          echo "MD5=$MD5" >> "$GITHUB_OUTPUT"
+        env:
+          ORIGIN_URL: ${{ inputs.ORIGIN_URL }}
+          URL: ${{ inputs.URL }}
+          custom_version: ${{ inputs.custom_version }}
+      - if: github.event.inputs.GithubRelease == 'true'
+        name: 处理包
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE"/GithubRelease
+          cd "$GITHUB_WORKSPACE"/GithubRelease
+          sudo split -b 1536M -d "$GITHUB_WORKSPACE"/zip/"$NEW_PACKAGE_NAME" "$NEW_PACKAGE_NAME"
+          cd "$GITHUB_WORKSPACE"
+          touch file.log
+          echo "$NEW_PACKAGE_NAME" > file.log
+      - if: github.event.inputs.GithubRelease == 'true'
+        name: 上传到Github Release
+        uses: ncipollo/release-action@main
+        with:
+          owner: zjw2017
+          repo: action_build_kalama_system
+          artifacts: ${{ github.workspace }}/GithubRelease/*
+          name: "${{ inputs.custom_version }}"
+          tag: "${{ inputs.custom_version }}"
+          bodyFile: "${{ github.workspace }}/file.log"
+          allowUpdates: true
+          artifactErrorsFailBuild: true
+          token: ${{ secrets.GH_TOKEN }}
+      - if: ${{ github.event.inputs.OneDrive == 'true' }}
+        name: 上传到OneDrive
+        run: |
+          rclone mkdir OneDrive:/MI_Packages/RubbishBin/DevPackages
+          rclone copy -P ./zip/* OneDrive:/MI_Packages/RubbishBin/DevPackages --buffer-size=1024M
+      - name: 发送 Onedrive 上传成功通知
+        run: |
+          if [[ "$device" == "ishtar" ]]; then
+            curl -i -X POST -H 'Content-type':'application/json' -d '{"token":"${{ secrets.appToken }}","title":"Xiaomi 13 Ultra '"$date"'已构建完成","content":" **Xiaomi 13 Ultra '"$date"'已构建完成** \n \n **包名：'"$NEW_PACKAGE_NAME"'** \n \n **MD5：'"$MD5"'** \n \n **下载地址为：[https://onedrive.zjw.js.cn/RubbishBin/DevPackages/'"$NEW_PACKAGE_NAME"'](https://onedrive.zjw.js.cn/RubbishBin/DevPackages/'"$NEW_PACKAGE_NAME"')** ","topic":"lahaina","template":"markdown"}' http://www.pushplus.plus/send || true
+          fi
+        env:
+          date: ${{ inputs.custom_version }}
