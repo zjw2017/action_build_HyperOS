@@ -120,9 +120,9 @@ jobs:
           mkdir -p ~/.config/rclone/
           unzip -o -q -P ${{ secrets.PASSWORD }} "$GITHUB_WORKSPACE"/tools/rclone_config.zip -d ~/.config/rclone/
           if [[ "$device" == "star" ]]; then
-            ORIGIN_URL=https://hugeota.d.miui.com/V14.0.23.9.18.DEV/miui_STAR_V14.0.23.9.18.DEV_2b2b67d265_13.0.zip
+            ORIGIN_URL=https://hugeota.d.miui.com/OS1.0.2.0.UKACNXM/miui_STAR_OS1.0.2.0.UKACNXM_783d84531a_14.0.zip
           elif [[ "$device" == "venus" ]]; then
-            ORIGIN_URL=https://hugeota.d.miui.com/V14.0.23.9.18.DEV/miui_VENUS_V14.0.23.9.18.DEV_6609e81e19_13.0.zip
+            ORIGIN_URL=https://hugeota.d.miui.com/OS1.0.1.0.UKBCNXM/miui_VENUS_OS1.0.1.0.UKBCNXM_f461404e5a_14.0.zip
           fi
           ORIGIN_ZIP_NAME=$(echo $ORIGIN_URL | sed 's/.*\(miui_.*\.zip\).*/\1/')
           TARGET_ZIP_NAME=$(echo $URL | sed 's/.*\(miui_.*\.zip\).*/\1/')
