@@ -100,6 +100,7 @@ jobs:
         run: |
           device=$(echo "$MATRIX_CONTEXT" | jq -r '.list.device')
           echo "device=$device" >> "$GITHUB_ENV"
+          echo "date=$date" >> "$GITHUB_ENV"
           if [[ "$device" == "ishtar" ]]; then
             curl -i -X POST -H 'Content-type':'application/json' -d '{"token":"${{ secrets.appToken }}","title":"Xiaomi 13 Ultra '"$date"'开始构建","content":" **Xiaomi 13 Ultra '"$date"'开始构建** ","topic":"lahaina","template":"markdown"}' http://www.pushplus.plus/send || true
           fi
@@ -132,14 +133,11 @@ jobs:
             out-file-path: "${{ env.device }}_files"
             token: ${{ secrets.GH_TOKEN }}
       - name: 自动构建
-        id: auto-build
         run: |
           sudo bash build_local_HyperOS.sh $ORIGIN_URL $URL $device $custom_version
           source "$GITHUB_WORKSPACE"/PackageInfo.txt
           echo "NEW_PACKAGE_NAME=$NEW_PACKAGE_NAME" >> "$GITHUB_ENV"
-          echo "NEW_PACKAGE_NAME=$NEW_PACKAGE_NAME" >> "$GITHUB_OUTPUT"
           echo "MD5=$MD5" >> "$GITHUB_ENV"
-          echo "MD5=$MD5" >> "$GITHUB_OUTPUT"
         env:
           ORIGIN_URL: ${{ inputs.ORIGIN_URL }}
           URL: ${{ inputs.URL }}
@@ -165,6 +163,7 @@ jobs:
           bodyFile: "${{ github.workspace }}/file.log"
           allowUpdates: true
           artifactErrorsFailBuild: true
+          removeArtifacts: true
           token: ${{ secrets.GH_TOKEN }}
       - if: ${{ github.event.inputs.OneDrive == 'true' }}
         name: 上传到OneDrive
@@ -176,5 +175,3 @@ jobs:
           if [[ "$device" == "ishtar" ]]; then
             curl -i -X POST -H 'Content-type':'application/json' -d '{"token":"${{ secrets.appToken }}","title":"Xiaomi 13 Ultra '"$date"'已构建完成","content":" **Xiaomi 13 Ultra '"$date"'已构建完成** \n \n **包名：'"$NEW_PACKAGE_NAME"'** \n \n **MD5：'"$MD5"'** \n \n **下载地址为：[https://onedrive.zjw.js.cn/RubbishBin/DevPackages/'"$NEW_PACKAGE_NAME"'](https://onedrive.zjw.js.cn/RubbishBin/DevPackages/'"$NEW_PACKAGE_NAME"')** ","topic":"lahaina","template":"markdown"}' http://www.pushplus.plus/send || true
           fi
-        env:
-          date: ${{ inputs.custom_version }}

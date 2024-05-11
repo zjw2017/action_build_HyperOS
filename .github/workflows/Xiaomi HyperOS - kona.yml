@@ -8,21 +8,13 @@ on:
         default: "all"
         required: true
       URL:
-        description: "待操作的系统包下载地址"
+        description: "移植包的下载地址"
         required: true
         type: string
       custom_version:
-        description: "待打包的版本号"
+        description: "自定义版本号"
         required: true
         type: string
-      pack_version:
-        description: "待打包的类型"
-        required: true
-        default: "premium"
-        type: choice
-        options:
-          - premium
-          - free
       VK:
         description: "Voyager Kernel"
         required: true
@@ -182,16 +174,13 @@ jobs:
             token: ${{ secrets.GH_TOKEN }}
       - name: 自动构建
         run: |
-          bash build_local_HyperOS.sh $URL $device $custom_version $pack_version $VK $data $pack_type
+          sudo bash build_local_HyperOS.sh $URL $device $custom_version $VK $data $pack_type
           source "$GITHUB_WORKSPACE"/PackageInfo.txt
           echo "NEW_PACKAGE_NAME=$NEW_PACKAGE_NAME" >> "$GITHUB_ENV"
-          echo "NEW_PACKAGE_NAME=$NEW_PACKAGE_NAME" >> "$GITHUB_OUTPUT"
           echo "MD5=$MD5" >> "$GITHUB_ENV"
-          echo "MD5=$MD5" >> "$GITHUB_OUTPUT"
         env:
           URL: ${{ inputs.URL }}
           custom_version: ${{ inputs.custom_version }}
-          pack_version: ${{ inputs.pack_version }}
           VK: ${{ inputs.VK }}
           data: ${{ inputs.data }}
           pack_type: ${{ inputs.pack_type }}
