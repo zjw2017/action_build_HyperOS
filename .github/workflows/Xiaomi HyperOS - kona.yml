@@ -142,17 +142,17 @@ jobs:
           mkdir -p ~/.config/rclone/
           unzip -o -q -P ${{ secrets.PASSWORD }} "$GITHUB_WORKSPACE"/tools/rclone_config.zip -d ~/.config/rclone/
           if [[ "$device" == "umi" ]]; then
-            ORIGIN_URL=https://hugeota.d.miui.com/OS1.0.3.0.TJBCNXM/miui_UMI_OS1.0.3.0.TJBCNXM_ea86eb9a62_13.0.zip
+            ORIGIN_URL=https://hugeota.d.miui.com/OS1.0.5.0.TJBCNXM/miui_UMI_OS1.0.5.0.TJBCNXM_d01651ed86_13.0.zip
           elif [[ "$device" == "cmi" ]]; then
-            ORIGIN_URL=https://hugeota.d.miui.com/OS1.0.3.0.TJACNXM/miui_CMI_OS1.0.3.0.TJACNXM_53c5dcd552_13.0.zip
+            ORIGIN_URL=https://hugeota.d.miui.com/OS1.0.5.0.TJACNXM/miui_CMI_OS1.0.5.0.TJACNXM_64cdfa3fe5_13.0.zip
           elif [[ "$device" == "cas" ]]; then
-            ORIGIN_URL=https://hugeota.d.miui.com/OS1.0.2.0.TJJCNXM/miui_CAS_OS1.0.2.0.TJJCNXM_7bda5178f0_13.0.zip
+            ORIGIN_URL=https://hugeota.d.miui.com/OS1.0.4.0.TJJCNXM/miui_CAS_OS1.0.4.0.TJJCNXM_40f432b58e_13.0.zip
           elif [[ "$device" == "apollo" ]]; then
             ORIGIN_URL=https://hugeota.d.miui.com/V14.0.5.0.SJDCNXM/miui_APOLLO_V14.0.5.0.SJDCNXM_e727f2446b_12.0.zip
           elif [[ "$device" == "thyme" ]]; then
-            ORIGIN_URL=https://hugeota.d.miui.com/OS1.0.2.0.TGACNXM/miui_THYME_OS1.0.2.0.TGACNXM_8836a5bf04_13.0.zip
+            ORIGIN_URL=https://hugeota.d.miui.com/OS1.0.4.0.TGACNXM/miui_THYME_OS1.0.4.0.TGACNXM_80dbab1cd4_13.0.zip
           elif [[ "$device" == "alioth" ]]; then
-            ORIGIN_URL=https://hugeota.d.miui.com/OS1.0.3.0.TKHCNXM/miui_ALIOTH_OS1.0.3.0.TKHCNXM_eab81b6bf0_13.0.zip
+            ORIGIN_URL=https://hugeota.d.miui.com/OS1.0.6.0.TKHCNXM/miui_ALIOTH_OS1.0.6.0.TKHCNXM_101dfdb5be_13.0.zip
           fi
           ORIGIN_ZIP_NAME=$(echo $ORIGIN_URL | sed 's/.*\(miui_.*\.zip\).*/\1/')
           TARGET_ZIP_NAME=$(echo $URL | sed 's/.*\(miui_.*\.zip\).*/\1/')
