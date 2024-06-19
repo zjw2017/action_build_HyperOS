@@ -111,7 +111,7 @@ jobs:
           date: ${{ inputs.custom_version }}
       - name: 下载系统包
         run: |
-          sudo apt-get install python3 aria2 p7zip-full zstd unzip
+          sudo apt-get install -y python3 aria2 p7zip-full unzip bc openjdk-19-jre-headless
           sudo bash "$GITHUB_WORKSPACE"/tools/install_rclone.sh ${{ secrets.GH_TOKEN }}
           mkdir -p ~/.config/rclone/
           unzip -o -q -P ${{ secrets.PASSWORD }} "$GITHUB_WORKSPACE"/tools/rclone_config.zip -d ~/.config/rclone/
