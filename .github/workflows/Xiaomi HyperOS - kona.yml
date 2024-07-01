@@ -25,24 +25,6 @@ on:
         required: true
         type: boolean
         default: false
-      Dolby:
-        description: "Dolby音频驱动"
-        required: true
-        type: boolean
-        default: true
-      DolbyConfig:
-        description: "Dolby音频配置"
-        required: true
-        type: boolean
-        default: false
-      NFC_Version:
-        description: "NFC版本"
-        required: true
-        default: "erofs"
-        type: choice
-        options:
-          - 2.1
-          - 1.0
       pack_type:
         description: "待打包的系统分区格式和上传方式"
         required: true
@@ -192,7 +174,7 @@ jobs:
             token: ${{ secrets.GH_TOKEN }}
       - name: 自动构建
         run: |
-          sudo bash build_local_HyperOS.sh $URL $device $custom_version $VK $data $pack_type $Dolby $DolbyConfig $NFC_Version
+          sudo bash build_local_HyperOS.sh $URL $device $custom_version $VK $data $pack_type
           source "$GITHUB_WORKSPACE"/PackageInfo.txt
           echo "NEW_PACKAGE_NAME=$NEW_PACKAGE_NAME" >> "$GITHUB_ENV"
           echo "MD5=$MD5" >> "$GITHUB_ENV"
