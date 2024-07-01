@@ -38,7 +38,7 @@ on:
       NFC_Version:
         description: "NFC版本"
         required: true
-        default: "2.1"
+        default: "erofs"
         type: choice
         options:
           - 2.1
