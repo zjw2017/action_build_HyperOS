@@ -201,6 +201,8 @@ jobs:
           VK: ${{ inputs.VK }}
           data: ${{ inputs.data }}
           pack_type: ${{ inputs.pack_type }}
+          Dolby: ${{ inputs.Dolby }}
+          NFC_Version: ${{ inputs.NFC_Version }}
       - if: github.event.inputs.GithubRelease == 'true'
         name: 处理包
         run: |
