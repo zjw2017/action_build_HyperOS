@@ -152,6 +152,22 @@ jobs:
         env:
           MATRIX_CONTEXT: ${{ toJson(matrix) }}
           date: ${{ inputs.custom_version }}
+      - name: test-output
+        run: |
+          info_necessary() {
+              echo -e "\e[1;31m$1\e[0m"
+          }
+          info_necessary output info.
+          echo "$Dolby,$NFC_Version"
+          echo "${{ inputs.Dolby }},${{ inputs.NFC_Version }}"
+        env:
+          URL: ${{ inputs.URL }}
+          custom_version: ${{ inputs.custom_version }}
+          VK: ${{ inputs.VK }}
+          data: ${{ inputs.data }}
+          pack_type: ${{ inputs.pack_type }}
+          Dolby: ${{ inputs.Dolby }}
+          NFC_Version: ${{ inputs.NFC_Version }}
       - name: 下载系统包
         run: |
           sudo apt-get install -y python3 aria2 p7zip-full unzip bc openjdk-19-jre-headless
