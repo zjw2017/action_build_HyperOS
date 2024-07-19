@@ -2,8 +2,8 @@ name: Auto Pack
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '*/10 9-15 * * 5'  # 每周五 17:00 至 23:59 每 10 分钟执行一次 (UTC时间)
+  # schedule:
+  #   - cron: '*/10 9-15 * * 5'  # 每周五 17:00 至 23:59 每 10 分钟执行一次 (UTC时间)
 jobs:
   check-version-thor:
     runs-on: ubuntu-latest
@@ -165,7 +165,6 @@ jobs:
       - name: 触发构建
         run: |
           URL="${{ needs.check-version-ishtar.outputs.ishtar_URL }}"
-          new_version="$(echo $URL | cut -d"/" -f4)"
           custom_version="OS1.0.$(date +"%y.%-m.%-d").DEV"
           curl -Ss -L \
             -X POST \
