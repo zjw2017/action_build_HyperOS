@@ -95,6 +95,7 @@ jobs:
         uses: actions/checkout@v4.1.1
         with:
           repository: zjw2017/action_build_kalama_system
+          ref: OS1.1
           token: ${{ secrets.GH_TOKEN }}
       - name: 发送开始构建通知
         run: |
@@ -115,13 +116,20 @@ jobs:
           sudo bash "$GITHUB_WORKSPACE"/tools/install_rclone.sh ${{ secrets.GH_TOKEN }}
           mkdir -p ~/.config/rclone/
           unzip -o -q -P ${{ secrets.PASSWORD }} "$GITHUB_WORKSPACE"/tools/rclone_config.zip -d ~/.config/rclone/
-          ORIGIN_ZIP_NAME=$(echo $ORIGIN_URL | sed 's/.*\(miui_.*\.zip\).*/\1/')
-          TARGET_ZIP_NAME=$(echo $URL | sed 's/.*\(miui_.*\.zip\).*/\1/')
+          URL_Old=$(echo $URL | cut -d"?" -f1)
+          head_url="${URL_Old%/*}"
+          file_name="${URL_Old##*/}"
+          device=$(echo $file_name | cut -d"-" -f1 | tr '[:lower:]' '[:upper:]')
+          version=$(echo $file_name | cut -d"-" -f3)
+          hash=$(echo $file_name | cut -d"-" -f6 | cut -d"." -f1)
+          android_version=$(echo $file_name | cut -d"-" -f5)
+          New_Package_Name="miui_${device}_${version}_${hash}_${android_version}.zip"
+          echo "New_URL=${head_url}/${New_Package_Name}" >> $GITHUB_ENV
           aria2c -x16 -j$(nproc) -U "Mozilla/5.0" -d "$GITHUB_WORKSPACE" "$ORIGIN_URL"
           if [[ "$URL" == *PrePackages* ]]; then
-            rclone copy OneDrive:/MI_Packages/RubbishBin/PrePackages/"$TARGET_ZIP_NAME" "$GITHUB_WORKSPACE"
+            rclone copy OneDrive:/MI_Packages/RubbishBin/PrePackages/"$file_name" "$GITHUB_WORKSPACE"
           elif [[ "$URL" != "$ORIGIN_URL" ]]; then
-            aria2c -x16 -j$(nproc) -U "Mozilla/5.0" -d "$GITHUB_WORKSPACE" "$URL"
+            aria2c -x16 -j$(nproc) -U "Mozilla/5.0" -d "$GITHUB_WORKSPACE" -o "$New_Package_Name" "$URL"
           fi
         env:
           ORIGIN_URL: ${{ inputs.ORIGIN_URL }}
@@ -136,11 +144,10 @@ jobs:
             token: ${{ secrets.GH_TOKEN }}
       - name: 自动构建
         run: |
-          sudo bash build_local_HyperOS.sh $ORIGIN_URL $URL $device $custom_version
+          sudo bash build_local_HyperOS.sh $ORIGIN_URL $New_URL $device $custom_version
           cat "$GITHUB_WORKSPACE"/PackageInfo.txt >> $GITHUB_ENV
         env:
           ORIGIN_URL: ${{ inputs.ORIGIN_URL }}
-          URL: ${{ inputs.URL }}
           custom_version: ${{ inputs.custom_version }}
       - if: github.event.inputs.GithubRelease == 'true'
         name: 处理包
