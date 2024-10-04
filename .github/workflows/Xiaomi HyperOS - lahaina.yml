@@ -91,6 +91,7 @@ jobs:
         uses: actions/checkout@v4.1.1
         with:
           repository: zjw2017/action_build_lahaina_system
+          ref: OS1.1
           token: ${{ secrets.GH_TOKEN }}
       - name: 发送开始构建通知
         run: |
@@ -116,13 +117,20 @@ jobs:
           elif [[ "$device" == "venus" ]]; then
             ORIGIN_URL=https://hugeota.d.miui.com/OS1.0.4.0.UKBCNXM/miui_VENUS_OS1.0.4.0.UKBCNXM_5735dd0b60_14.0.zip
           fi
-          ORIGIN_ZIP_NAME=$(echo $ORIGIN_URL | sed 's/.*\(miui_.*\.zip\).*/\1/')
-          TARGET_ZIP_NAME=$(echo $URL | sed 's/.*\(miui_.*\.zip\).*/\1/')
+          URL_Old=$(echo $URL | cut -d"?" -f1)
+          head_url="${URL_Old%/*}"
+          file_name="${URL_Old##*/}"
+          device=$(echo $file_name | cut -d"-" -f1 | tr '[:lower:]' '[:upper:]')
+          version=$(echo $file_name | cut -d"-" -f3)
+          hash=$(echo $file_name | cut -d"-" -f6 | cut -d"." -f1)
+          android_version=$(echo $file_name | cut -d"-" -f5)
+          New_Package_Name="miui_${device}_${version}_${hash}_${android_version}.zip"
+          echo "New_URL=${head_url}/${New_Package_Name}" >> $GITHUB_ENV
           rclone copy OneDrive:/MI_Packages/RubbishBin/BottomPackages/"$ORIGIN_ZIP_NAME" "$GITHUB_WORKSPACE"
           if [[ "$URL" == *PrePackages* ]]; then
-            rclone copy OneDrive:/MI_Packages/RubbishBin/PrePackages/"$TARGET_ZIP_NAME" "$GITHUB_WORKSPACE"
+            rclone copy OneDrive:/MI_Packages/RubbishBin/PrePackages/"$file_name" "$GITHUB_WORKSPACE"
           elif [[ "$URL" != "$ORIGIN_URL" ]]; then
-            aria2c -x16 -j$(nproc) -U "Mozilla/5.0" -d "$GITHUB_WORKSPACE" "$URL"
+            aria2c -x16 -j$(nproc) -U "Mozilla/5.0" -d "$GITHUB_WORKSPACE" -o "$New_Package_Name" "$URL"
           fi
         env:
           URL: ${{ inputs.URL }}
@@ -136,10 +144,9 @@ jobs:
             token: ${{ secrets.GH_TOKEN }}
       - name: 自动构建
         run: |
-          sudo bash build_local_HyperOS.sh $URL $device $custom_version
+          sudo bash build_local_HyperOS.sh $New_URL $device $custom_version
           cat "$GITHUB_WORKSPACE"/PackageInfo.txt >> $GITHUB_ENV
         env:
-          URL: ${{ inputs.URL }}
           custom_version: ${{ inputs.custom_version }}
       - if: github.event.inputs.GithubRelease == 'true'
         name: 处理包
