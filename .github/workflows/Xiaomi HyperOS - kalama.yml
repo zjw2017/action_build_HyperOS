@@ -97,19 +97,6 @@ jobs:
           repository: zjw2017/action_build_kalama_system
           ref: OS1.1
           token: ${{ secrets.GH_TOKEN }}
-      - name: 发送开始构建通知
-        run: |
-          device=$(echo "$MATRIX_CONTEXT" | jq -r '.list.device')
-          echo "device=$device" >> "$GITHUB_ENV"
-          echo "date=$date" >> "$GITHUB_ENV"
-          if [[ "$device" == "ishtar" ]]; then
-            curl -i -X POST -H 'Content-type':'application/json' -d '{"token":"${{ secrets.appToken }}","title":"Xiaomi 13 Ultra '"$date"'开始构建","content":" **Xiaomi 13 Ultra '"$date"'开始构建** ","topic":"lahaina","template":"markdown"}' http://www.pushplus.plus/send || true
-          elif [[ "$device" == "vermeer" ]]; then
-            curl -i -X POST -H 'Content-type':'application/json' -d '{"token":"${{ secrets.appToken }}","title":"Redmi K70 '"$date"'开始构建","content":" **Redmi K70 '"$date"'开始构建** ","topic":"lahaina","template":"markdown"}' http://www.pushplus.plus/send || true
-          fi
-        env:
-          MATRIX_CONTEXT: ${{ toJson(matrix) }}
-          date: ${{ inputs.custom_version }}
       - name: 下载系统包
         run: |
           sudo apt-get install -y python3 aria2 p7zip-full unzip bc openjdk-19-jre-headless
@@ -144,9 +131,12 @@ jobs:
             token: ${{ secrets.GH_TOKEN }}
       - name: 自动构建
         run: |
+          export appToken="${{ secrets.appToken }}"
+          device=$(echo "$MATRIX_CONTEXT" | jq -r '.list.device')
           sudo bash build_local_HyperOS.sh $ORIGIN_URL $New_URL $device $custom_version
           cat "$GITHUB_WORKSPACE"/PackageInfo.txt >> $GITHUB_ENV
         env:
+          MATRIX_CONTEXT: ${{ toJson(matrix) }}
           ORIGIN_URL: ${{ inputs.ORIGIN_URL }}
           custom_version: ${{ inputs.custom_version }}
       - if: github.event.inputs.GithubRelease == 'true'
@@ -179,8 +169,6 @@ jobs:
           rclone copy -P ./zip/* OneDrive:/MI_Packages/RubbishBin/DevPackages --buffer-size=1024M
       - name: 发送 Onedrive 上传成功通知
         run: |
-          if [[ "$device" == "ishtar" ]]; then
-            curl -i -X POST -H 'Content-type':'application/json' -d '{"token":"${{ secrets.appToken }}","title":"Xiaomi 13 Ultra '"$date"'已构建完成","content":" **Xiaomi 13 Ultra '"$date"'已构建完成** \n \n **底包的 OS 版本：'"$bottom_os_date"'** \n \n **底包的 Android 安全更新版本：'"$bottom_security_patch"'** \n \n **底包的 Android 基线版本：'"$bottom_base_line"'** \n \n **移植包的 OS 版本：'"$target_os_date"'** \n \n **移植包的 Android 安全更新版本：'"$target_security_patch"'** \n \n **移植包的 Android 基线版本：'"$target_base_line"'** \n \n **包名：'"$NEW_PACKAGE_NAME"'** \n \n **MD5：'"$MD5"'** \n \n **下载地址为：[https://onedrive.zjw.js.cn/RubbishBin/DevPackages/'"$NEW_PACKAGE_NAME"'](https://onedrive.zjw.js.cn/RubbishBin/DevPackages/'"$NEW_PACKAGE_NAME"')** ","topic":"lahaina","template":"markdown"}' http://www.pushplus.plus/send || true
-          elif [[ "$device" == "vermeer" ]]; then
-            curl -i -X POST -H 'Content-type':'application/json' -d '{"token":"${{ secrets.appToken }}","title":"Redmi K70 '"$date"'已构建完成","content":" **Redmi K70 '"$date"'已构建完成** \n \n **底包的 OS 版本：'"$bottom_os_date"'** \n \n **底包的 Android 安全更新版本：'"$bottom_security_patch"'** \n \n **底包的 Android 基线版本：'"$bottom_base_line"'** \n \n **移植包的 OS 版本：'"$target_os_date"'** \n \n **移植包的 Android 安全更新版本：'"$target_security_patch"'** \n \n **移植包的 Android 基线版本：'"$target_base_line"'** \n \n **包名：'"$NEW_PACKAGE_NAME"'** \n \n **MD5：'"$MD5"'** \n \n **下载地址为：[https://onedrive.zjw.js.cn/RubbishBin/DevPackages/'"$NEW_PACKAGE_NAME"'](https://onedrive.zjw.js.cn/RubbishBin/DevPackages/'"$NEW_PACKAGE_NAME"')** ","topic":"lahaina","template":"markdown"}' http://www.pushplus.plus/send || true
-          fi
+          curl -i -X POST -H 'Content-type':'application/json' -d '{"token":"${{ secrets.appToken }}","title":"Xiaomi 13 Ultra '"$date"'已构建完成","content":" **Xiaomi 13 Ultra '"$date"'已构建完成** \n \n **底包的 OS 版本：'"$bottom_os_date"'** \n \n **底包的 Android 安全更新版本：'"$bottom_security_patch"'** \n \n **底包的 Android 基线版本：'"$bottom_base_line"'** \n \n **移植包的 OS 版本：'"$target_os_date"'** \n \n **移植包的 Android 安全更新版本：'"$target_security_patch"'** \n \n **移植包的 Android 基线版本：'"$target_base_line"'** \n \n **包名：'"$NEW_PACKAGE_NAME"'** \n \n **MD5：'"$MD5"'** \n \n **下载地址为：[https://onedrive.zjw.js.cn/RubbishBin/DevPackages/'"$NEW_PACKAGE_NAME"'](https://onedrive.zjw.js.cn/RubbishBin/DevPackages/'"$NEW_PACKAGE_NAME"')** ","topic":"lahaina","template":"markdown"}' http://www.pushplus.plus/send || true
+        env:
+          date: ${{ inputs.custom_version }}
