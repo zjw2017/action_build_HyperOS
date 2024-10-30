@@ -180,7 +180,7 @@ jobs:
             token: ${{ secrets.GH_TOKEN }}
       - name: 自动构建
         run: |
-          sudo bash build_local_HyperOS.sh $URL $device $custom_version $VK $Dolby $data $pack_type
+          sudo bash build_local_HyperOS2.sh $URL $device $custom_version $VK $Dolby $data $pack_type
           cat "$GITHUB_WORKSPACE"/PackageInfo.txt >> $GITHUB_ENV
         env:
           URL: ${{ inputs.URL }}
