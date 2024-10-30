@@ -20,6 +20,11 @@ on:
         required: true
         type: boolean
         default: true
+      Dolby:
+        description: "杜比全景声"
+        required: true
+        type: boolean
+        default: false
       data:
         description: "去除data加密"
         required: true
@@ -113,6 +118,7 @@ jobs:
         uses: actions/checkout@v4.1.1
         with:
           repository: Weverses/ActionBuildCasSystemT
+          ref: OS2
           token: ${{ secrets.GH_TOKEN }}
       - name: 发送开始构建通知
         run: |
@@ -155,7 +161,7 @@ jobs:
             ORIGIN_URL=https://hugeota.d.miui.com/OS1.0.6.0.TKHCNXM/miui_ALIOTH_OS1.0.6.0.TKHCNXM_101dfdb5be_13.0.zip
           fi
           ORIGIN_ZIP_NAME=$(echo $ORIGIN_URL | sed 's/.*\(miui_.*\.zip\).*/\1/')
-          TARGET_ZIP_NAME=$(echo $URL | sed 's/.*\(miui_.*\.zip\).*/\1/')
+          TARGET_ZIP_NAME=$(echo "$URL" | sed 's#.*/\([^/]*ota_full[^/]*\.zip\).*#\1#')
           rclone copy OneDrive:/MI_Packages/RubbishBin/BottomPackages/"$ORIGIN_ZIP_NAME" "$GITHUB_WORKSPACE"
           if [[ "$URL" == *PrePackages* ]]; then
             rclone copy OneDrive:/MI_Packages/RubbishBin/PrePackages/"$TARGET_ZIP_NAME" "$GITHUB_WORKSPACE"
@@ -174,7 +180,7 @@ jobs:
             token: ${{ secrets.GH_TOKEN }}
       - name: 自动构建
         run: |
-          sudo bash build_local_HyperOS.sh $URL $device $custom_version $VK $data $pack_type
+          sudo bash build_local_HyperOS.sh $URL $device $custom_version $VK $Dolby $data $pack_type
           cat "$GITHUB_WORKSPACE"/PackageInfo.txt >> $GITHUB_ENV
         env:
           URL: ${{ inputs.URL }}
