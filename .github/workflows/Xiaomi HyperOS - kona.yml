@@ -186,6 +186,7 @@ jobs:
           URL: ${{ inputs.URL }}
           custom_version: ${{ inputs.custom_version }}
           VK: ${{ inputs.VK }}
+          Dolby: ${{ inputs.Dolby }}
           data: ${{ inputs.data }}
           pack_type: ${{ inputs.pack_type }}
       - if: github.event.inputs.GithubRelease == 'true'
