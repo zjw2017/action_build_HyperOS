@@ -91,7 +91,7 @@ jobs:
         uses: actions/checkout@v4.1.1
         with:
           repository: zjw2017/action_build_lahaina_system
-          ref: OS1.1
+          ref: OS2.0
           token: ${{ secrets.GH_TOKEN }}
       - name: 下载系统包
         run: |
