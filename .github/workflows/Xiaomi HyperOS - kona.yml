@@ -25,6 +25,14 @@ on:
         required: true
         type: boolean
         default: false
+      NFC_Version:
+        description: "NFC版本"
+        required: true
+        default: "2"
+        type: choice
+        options:
+          - "1"
+          - "2"
       data:
         description: "去除data加密"
         required: true
@@ -180,13 +188,14 @@ jobs:
             token: ${{ secrets.GH_TOKEN }}
       - name: 自动构建
         run: |
-          sudo bash build_local_HyperOS2.sh $URL $device $custom_version $VK $Dolby $data $pack_type
+          sudo bash build_local_HyperOS2.sh $URL $device $custom_version $VK $Dolby $data $pack_type $NFC_Version
           cat "$GITHUB_WORKSPACE"/PackageInfo.txt >> $GITHUB_ENV
         env:
           URL: ${{ inputs.URL }}
           custom_version: ${{ inputs.custom_version }}
           VK: ${{ inputs.VK }}
           Dolby: ${{ inputs.Dolby }}
+          NFC_Version: ${{ inputs.NFC_Version }}
           data: ${{ inputs.data }}
           pack_type: ${{ inputs.pack_type }}
       - if: github.event.inputs.GithubRelease == 'true'
