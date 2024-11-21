@@ -95,7 +95,7 @@ jobs:
           token: ${{ secrets.GH_TOKEN }}
       - name: 下载系统包
         run: |
-          sudo apt-get install -y python3 aria2 p7zip-full unzip bc openjdk-19-jre-headless
+          eval $(cat build_local_HyperOS.sh | grep "apt-get")
           sudo bash "$GITHUB_WORKSPACE"/tools/install_rclone.sh ${{ secrets.GH_TOKEN }}
           mkdir -p ~/.config/rclone/
           unzip -o -q -P ${{ secrets.PASSWORD }} "$GITHUB_WORKSPACE"/tools/rclone_config.zip -d ~/.config/rclone/
