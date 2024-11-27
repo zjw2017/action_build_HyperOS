@@ -140,6 +140,7 @@ jobs:
             date=${custom_version//${model}/JA}
             curl -i -X POST -H 'Content-type':'application/json' -d '{"token":"${{ secrets.appToken }}","title":"小米10Pro '"$date"'开始构建","content":" **小米10Pro '"$date"'开始构建** ","topic":"kona","template":"markdown"}' http://www.pushplus.plus/send || true
           elif [[ "$device" == "cas" ]]; then
+            date=$custom_version
             curl -i -X POST -H 'Content-type':'application/json' -d '{"token":"${{ secrets.appToken }}","title":"小米10 Ultra '"$date"'开始构建","content":" **小米10 Ultra '"$date"'开始构建** ","topic":"kona","template":"markdown"}' http://www.pushplus.plus/send || true
           elif [[ "$device" == "apollo" ]]; then
             date=${custom_version//${model}/JD}

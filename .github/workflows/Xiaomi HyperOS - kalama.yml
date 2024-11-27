@@ -133,8 +133,10 @@ jobs:
           model=$(echo "$custom_version" | cut -d"." -f5 | sed 's/^.\(..\).*$/\1/')
           if [[ "$device" == "nuwa" ]]; then
             date=${custom_version//${model}/MB}
-            echo "date=$date" >> $GITHUB_ENV
+          else
+            date=$custom_version
           fi
+          echo "date=$date" >> $GITHUB_ENV
           sudo bash build_local_HyperOS.sh $ORIGIN_URL $URL $device $date $pack_type
           cat "$GITHUB_WORKSPACE"/PackageInfo.txt >> $GITHUB_ENV
         env:

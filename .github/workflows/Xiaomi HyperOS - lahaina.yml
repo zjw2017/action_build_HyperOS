@@ -108,6 +108,7 @@ jobs:
           echo "device=$device" >> "$GITHUB_ENV"
           model=$(echo "$custom_version" | cut -d"." -f5 | sed 's/^.\(..\).*$/\1/')
           if [[ "$device" == "star" ]]; then
+            date=$custom_version
             ORIGIN_URL=https://hugeota.d.miui.com/OS1.0.6.0.UKACNXM/miui_STAR_OS1.0.6.0.UKACNXM_a9c4d97169_14.0.zip
           elif [[ "$device" == "venus" ]]; then
             date=${custom_version//${model}/KB}
