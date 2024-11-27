@@ -132,23 +132,29 @@ jobs:
         run: |
           device=$(echo "$MATRIX_CONTEXT" | jq -r '.list.device')
           echo "device=$device" >> "$GITHUB_ENV"
-          echo "date=$date" >> "$GITHUB_ENV"
+          model=$(echo "$custom_version" | cut -d"." -f5 | sed 's/^.\(..\).*$/\1/')
           if [[ "$device" == "umi" ]]; then
+            date=${custom_version//${model}/JB}
             curl -i -X POST -H 'Content-type':'application/json' -d '{"token":"${{ secrets.appToken }}","title":"小米10 '"$date"'开始构建","content":" **小米10 '"$date"'开始构建** ","topic":"kona","template":"markdown"}' http://www.pushplus.plus/send || true
           elif [[ "$device" == "cmi" ]]; then
+            date=${custom_version//${model}/JA}
             curl -i -X POST -H 'Content-type':'application/json' -d '{"token":"${{ secrets.appToken }}","title":"小米10Pro '"$date"'开始构建","content":" **小米10Pro '"$date"'开始构建** ","topic":"kona","template":"markdown"}' http://www.pushplus.plus/send || true
           elif [[ "$device" == "cas" ]]; then
             curl -i -X POST -H 'Content-type':'application/json' -d '{"token":"${{ secrets.appToken }}","title":"小米10 Ultra '"$date"'开始构建","content":" **小米10 Ultra '"$date"'开始构建** ","topic":"kona","template":"markdown"}' http://www.pushplus.plus/send || true
           elif [[ "$device" == "apollo" ]]; then
+            date=${custom_version//${model}/JD}
             curl -i -X POST -H 'Content-type':'application/json' -d '{"token":"${{ secrets.appToken }}","title":"红米K30S Ultra '"$date"'开始构建","content":" **红米K30S Ultra '"$date"'开始构建** ","topic":"kona","template":"markdown"}' http://www.pushplus.plus/send || true
           elif [[ "$device" == "thyme" ]]; then
+            date=${custom_version//${model}/GA}
             curl -i -X POST -H 'Content-type':'application/json' -d '{"token":"${{ secrets.appToken }}","title":"小米10S '"$date"'开始构建","content":" **小米10S '"$date"'开始构建** ","topic":"kona","template":"markdown"}' http://www.pushplus.plus/send || true
           elif [[ "$device" == "alioth" ]]; then
+            date=${custom_version//${model}/KH}
             curl -i -X POST -H 'Content-type':'application/json' -d '{"token":"${{ secrets.appToken }}","title":"红米K40 '"$date"'开始构建","content":" **红米K40 '"$date"'开始构建** ","topic":"kona","template":"markdown"}' http://www.pushplus.plus/send || true
           fi
+          echo "date=$date" >> "$GITHUB_ENV"
         env:
           MATRIX_CONTEXT: ${{ toJson(matrix) }}
-          date: ${{ inputs.custom_version }}
+          custom_version: ${{ inputs.custom_version }}
       - name: 下载系统包
         run: |
           eval $(cat build_local_HyperOS.sh | grep "apt-get")
@@ -168,11 +174,11 @@ jobs:
           elif [[ "$device" == "alioth" ]]; then
             ORIGIN_URL=https://hugeota.d.miui.com/OS1.0.6.0.TKHCNXM/miui_ALIOTH_OS1.0.6.0.TKHCNXM_101dfdb5be_13.0.zip
           fi
-          ORIGIN_ZIP_NAME=$(echo $ORIGIN_URL | sed 's/.*\(miui_.*\.zip\).*/\1/')
-          TARGET_ZIP_NAME=$(echo "$URL" | sed 's#.*/\([^/]*ota_full[^/]*\.zip\).*#\1#')
-          rclone copy OneDrive:/MI_Packages/RubbishBin/BottomPackages/"$ORIGIN_ZIP_NAME" "$GITHUB_WORKSPACE"
+          ORIGIN_ZIP_NAME=$(echo "$ORIGIN_URL" | cut -d"?" -f1 | cut -d"/" -f5) 
+          TARGET_ZIP_NAME=$(echo "$URL" | cut -d"?" -f1 | cut -d"/" -f5) 
+          rclone copy -P OneDrive:/MI_Packages/RubbishBin/BottomPackages/"$ORIGIN_ZIP_NAME" "$GITHUB_WORKSPACE"
           if [[ "$URL" == *PrePackages* ]]; then
-            rclone copy OneDrive:/MI_Packages/RubbishBin/PrePackages/"$TARGET_ZIP_NAME" "$GITHUB_WORKSPACE"
+            rclone copy -P OneDrive:/MI_Packages/RubbishBin/PrePackages/"$TARGET_ZIP_NAME" "$GITHUB_WORKSPACE"
           elif [[ "$URL" != "$ORIGIN_URL" ]]; then
             aria2c -x16 -j$(nproc) -U "Mozilla/5.0" -d "$GITHUB_WORKSPACE" "$URL"
           fi
@@ -188,11 +194,10 @@ jobs:
             token: ${{ secrets.GH_TOKEN }}
       - name: 自动构建
         run: |
-          sudo bash build_local_HyperOS2.sh $URL $device $custom_version $VK $Dolby $data $pack_type $NFC_Version
+          sudo bash build_local_HyperOS2.sh $URL $device $date $VK $Dolby $data $pack_type $NFC_Version
           cat "$GITHUB_WORKSPACE"/PackageInfo.txt >> $GITHUB_ENV
         env:
           URL: ${{ inputs.URL }}
-          custom_version: ${{ inputs.custom_version }}
           VK: ${{ inputs.VK }}
           Dolby: ${{ inputs.Dolby }}
           NFC_Version: ${{ inputs.NFC_Version }}

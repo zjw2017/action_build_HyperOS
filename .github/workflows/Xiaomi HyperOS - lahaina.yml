@@ -25,6 +25,11 @@ on:
         required: true
         type: boolean
         default: false
+      pack_type:
+        description: "打包Payload.bin"
+        required: true
+        type: boolean
+        default: true
 jobs:
   build_matrix:
     name: 设置构建阵列
@@ -101,28 +106,25 @@ jobs:
           unzip -o -q -P ${{ secrets.PASSWORD }} "$GITHUB_WORKSPACE"/tools/rclone_config.zip -d ~/.config/rclone/
           device=$(echo "$MATRIX_CONTEXT" | jq -r '.list.device')
           echo "device=$device" >> "$GITHUB_ENV"
+          model=$(echo "$custom_version" | cut -d"." -f5 | sed 's/^.\(..\).*$/\1/')
           if [[ "$device" == "star" ]]; then
             ORIGIN_URL=https://hugeota.d.miui.com/OS1.0.6.0.UKACNXM/miui_STAR_OS1.0.6.0.UKACNXM_a9c4d97169_14.0.zip
           elif [[ "$device" == "venus" ]]; then
+            date=${custom_version//${model}/KB}
             ORIGIN_URL=https://hugeota.d.miui.com/OS1.0.6.0.UKBCNXM/miui_VENUS_OS1.0.6.0.UKBCNXM_58fe53deed_14.0.zip
           fi
-          URL_Old=$(echo $URL | cut -d"?" -f1)
-          head_url="${URL_Old%/*}"
-          file_name="${URL_Old##*/}"
-          device=$(echo $file_name | cut -d"-" -f1 | tr '[:lower:]' '[:upper:]')
-          version=$(echo $file_name | cut -d"-" -f3)
-          hash=$(echo $file_name | cut -d"-" -f6 | cut -d"." -f1)
-          android_version=$(echo $file_name | cut -d"-" -f5)
-          New_Package_Name="miui_${device}_${version}_${hash}_${android_version}.zip"
-          echo "New_URL=${head_url}/${New_Package_Name}" >> $GITHUB_ENV
-          rclone copy OneDrive:/MI_Packages/RubbishBin/BottomPackages/"$ORIGIN_ZIP_NAME" "$GITHUB_WORKSPACE"
+          echo "date=$date" >> "$GITHUB_ENV"
+          ORIGIN_ZIP_NAME=$(echo "$ORIGIN_URL" | cut -d"?" -f1 | cut -d"/" -f5) 
+          TARGET_ZIP_NAME=$(echo "$URL" | cut -d"?" -f1 | cut -d"/" -f5) 
+          rclone copy -P OneDrive:/MI_Packages/RubbishBin/BottomPackages/"$ORIGIN_ZIP_NAME" "$GITHUB_WORKSPACE"
           if [[ "$URL" == *PrePackages* ]]; then
-            rclone copy OneDrive:/MI_Packages/RubbishBin/PrePackages/"$file_name" "$GITHUB_WORKSPACE"
+            rclone copy -P OneDrive:/MI_Packages/RubbishBin/PrePackages/"$TARGET_ZIP_NAME" "$GITHUB_WORKSPACE"
           elif [[ "$URL" != "$ORIGIN_URL" ]]; then
-            aria2c -x16 -j$(nproc) -U "Mozilla/5.0" -d "$GITHUB_WORKSPACE" -o "$New_Package_Name" "$URL"
+            aria2c -x16 -j$(nproc) -U "Mozilla/5.0" -d "$GITHUB_WORKSPACE" "$URL"
           fi
         env:
           MATRIX_CONTEXT: ${{ toJson(matrix) }}
+          custom_version: ${{ inputs.custom_version }}
           URL: ${{ inputs.URL }}
       - name: 下载 TWRP
         uses: robinraju/release-downloader@v1.9
@@ -135,10 +137,11 @@ jobs:
       - name: 自动构建
         run: |
           export appToken="${{ secrets.appToken }}"
-          sudo bash build_local_HyperOS.sh $New_URL $device $custom_version
+          sudo bash build_local_HyperOS.sh $URL $device $date $pack_type
           cat "$GITHUB_WORKSPACE"/PackageInfo.txt >> $GITHUB_ENV
         env:
-          custom_version: ${{ inputs.custom_version }}
+          URL: ${{ inputs.URL }}
+          pack_type: ${{ inputs.pack_type }}
       - if: github.event.inputs.GithubRelease == 'true'
         name: 处理包
         run: |
@@ -170,9 +173,7 @@ jobs:
       - name: 发送 Onedrive 上传成功通知
         run: |
           if [[ "$device" == "star" ]]; then
-            curl -i -X POST -H 'Content-type':'application/json' -d '{"token":"${{ secrets.appToken }}","title":"小米11 Pro/Ultra '"$date"'已构建完成","content":" **小米11 Pro/Ultra '"$date"'已构建完成** \n \n **底包的 OS 版本：'"$bottom_os_date"'** \n \n **底包的 Android 安全更新版本：'"$bottom_security_patch"'** \n \n **底包的 Android 基线版本：'"$bottom_base_line"'** \n \n **移植包的 OS 版本：'"$target_os_date"'** \n \n **移植包的 Android 安全更新版本：'"$target_security_patch"'** \n \n **移植包的 Android 基线版本：'"$target_base_line"'** \n \n **包名：'"$NEW_PACKAGE_NAME"'** \n \n **MD5：'"$MD5"'** \n \n **下载地址为：[https://onedrive.zjw.js.cn/RubbishBin/DevPackages/'"$NEW_PACKAGE_NAME"'](https://onedrive.zjw.js.cn/RubbishBin/DevPackages/'"$NEW_PACKAGE_NAME"')** ","topic":"lahaina","template":"markdown"}' http://www.pushplus.plus/send || true
+            curl -i -X POST -H 'Content-type':'application/json' -d '{"token":"${{ secrets.appToken }}","title":"Xiaomi 11 Pro/Ultra '"$date"'已构建完成","content":" **Xiaomi 11 Pro/Ultra '"$date"'已构建完成** \n \n **底包的 OS 版本：'"$bottom_os_date"'** \n \n **底包的 Android 安全更新版本：'"$bottom_security_patch"'** \n \n **底包的 Android 基线版本：'"$bottom_base_line"'** \n \n **移植包的 OS 版本：'"$target_os_date"'** \n \n **移植包的 Android 安全更新版本：'"$target_security_patch"'** \n \n **移植包的 Android 基线版本：'"$target_base_line"'** \n \n **包名：'"$NEW_PACKAGE_NAME"'** \n \n **MD5：'"$MD5"'** \n \n **下载地址为：[https://onedrive.zjw.js.cn/RubbishBin/DevPackages/'"$NEW_PACKAGE_NAME"'](https://onedrive.zjw.js.cn/RubbishBin/DevPackages/'"$NEW_PACKAGE_NAME"')** ","topic":"lahaina","template":"markdown"}' http://www.pushplus.plus/send || true
           elif [[ "$device" == "venus" ]]; then
-            curl -i -X POST -H 'Content-type':'application/json' -d '{"token":"${{ secrets.appToken }}","title":"小米11 '"$date"'已构建完成","content":" **小米11 '"$date"'已构建完成** \n \n **底包的 OS 版本：'"$bottom_os_date"'** \n \n **底包的 Android 安全更新版本：'"$bottom_security_patch"'** \n \n **底包的 Android 基线版本：'"$bottom_base_line"'** \n \n **移植包的 OS 版本：'"$target_os_date"'** \n \n **移植包的 Android 安全更新版本：'"$target_security_patch"'** \n \n **移植包的 Android 基线版本：'"$target_base_line"'** \n \n **包名：'"$NEW_PACKAGE_NAME"'** \n \n **MD5：'"$MD5"'** \n \n **下载地址为：[https://onedrive.zjw.js.cn/RubbishBin/DevPackages/'"$NEW_PACKAGE_NAME"'](https://onedrive.zjw.js.cn/RubbishBin/DevPackages/'"$NEW_PACKAGE_NAME"')** ","topic":"lahaina","template":"markdown"}' http://www.pushplus.plus/send || true
+            curl -i -X POST -H 'Content-type':'application/json' -d '{"token":"${{ secrets.appToken }}","title":"Xiaomi 11 '"$date"'已构建完成","content":" **Xiaomi 11 '"$date"'已构建完成** \n \n **底包的 OS 版本：'"$bottom_os_date"'** \n \n **底包的 Android 安全更新版本：'"$bottom_security_patch"'** \n \n **底包的 Android 基线版本：'"$bottom_base_line"'** \n \n **移植包的 OS 版本：'"$target_os_date"'** \n \n **移植包的 Android 安全更新版本：'"$target_security_patch"'** \n \n **移植包的 Android 基线版本：'"$target_base_line"'** \n \n **包名：'"$NEW_PACKAGE_NAME"'** \n \n **MD5：'"$MD5"'** \n \n **下载地址为：[https://onedrive.zjw.js.cn/RubbishBin/DevPackages/'"$NEW_PACKAGE_NAME"'](https://onedrive.zjw.js.cn/RubbishBin/DevPackages/'"$NEW_PACKAGE_NAME"')** ","topic":"lahaina","template":"markdown"}' http://www.pushplus.plus/send || true
           fi
-        env:
-          date: ${{ inputs.custom_version }}
