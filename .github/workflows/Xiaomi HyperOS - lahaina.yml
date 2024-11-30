@@ -123,10 +123,26 @@ jobs:
           elif [[ "$URL" != "$ORIGIN_URL" ]]; then
             aria2c -x16 -j$(nproc) -U "Mozilla/5.0" -d "$GITHUB_WORKSPACE" "$URL"
           fi
+          if [[ "$device" == "star" ]]; then
+            rclone copy -P OneDrive:/MI_Packages/RubbishBin/PreArtifacts/star.txt "$GITHUB_WORKSPACE"
+            dos2unix "$GITHUB_WORKSPACE"/star.txt
+            post_package=$(cat "$GITHUB_WORKSPACE"/star.txt)
+          else
+            rclone copy -P OneDrive:/MI_Packages/RubbishBin/PreArtifacts/venus.txt "$GITHUB_WORKSPACE"
+            dos2unix "$GITHUB_WORKSPACE"/venus.txt
+            post_package=$(cat "$GITHUB_WORKSPACE"/venus.txt)
+          fi
+          echo "post_package=$post_package" >> $GITHUB_ENV
         env:
           MATRIX_CONTEXT: ${{ toJson(matrix) }}
           custom_version: ${{ inputs.custom_version }}
           URL: ${{ inputs.URL }}
+      - if: github.event.inputs.pack_type == 'true'
+        name: 下载 ${{ env.post_package }} 
+        run: |
+          if [[ -n "$post_package" ]]; then
+            rclone copy -P OneDrive:/MI_Packages/RubbishBin/PreArtifacts/"$post_package" "$GITHUB_WORKSPACE"/tools/payload_repack
+          fi
       - name: 下载 TWRP
         uses: robinraju/release-downloader@v1.9
         with:
@@ -137,8 +153,7 @@ jobs:
             token: ${{ secrets.GH_TOKEN }}
       - name: 自动构建
         run: |
-          export appToken="${{ secrets.appToken }}"
-          sudo bash build_local_HyperOS.sh $URL $device $date $pack_type
+          sudo appToken="${{ secrets.appToken }}" TMPDIR="$GITHUB_WORKSPACE"/TMPDIR user=$(whoami) bash build_local_HyperOS.sh $URL $device $date $pack_type "$post_package"
           cat "$GITHUB_WORKSPACE"/PackageInfo.txt >> $GITHUB_ENV
         env:
           URL: ${{ inputs.URL }}
@@ -170,7 +185,13 @@ jobs:
         name: 上传到OneDrive
         run: |
           rclone mkdir OneDrive:/MI_Packages/RubbishBin/DevPackages
-          rclone copy -P ./zip/* OneDrive:/MI_Packages/RubbishBin/DevPackages --buffer-size=1024M
+          for i in $(ls "$GITHUB_WORKSPACE"/zip); do
+            if [[ "$i" == "$bottom_package_name" ]]; then
+              rclone copy -P ./zip/$i OneDrive:/MI_Packages/RubbishBin/PreArtifacts --buffer-size=1024M
+            else
+              rclone copy -P ./zip/$i OneDrive:/MI_Packages/RubbishBin/DevPackages --buffer-size=1024M
+            fi
+          done
       - name: 发送 Onedrive 上传成功通知
         run: |
           if [[ "$device" == "star" ]]; then

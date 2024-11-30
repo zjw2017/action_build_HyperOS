@@ -100,7 +100,7 @@ jobs:
         uses: actions/checkout@v4.1.1
         with:
           repository: zjw2017/action_build_liuqin_system
-          ref: OS2.0
+          ref: main
           token: ${{ secrets.GH_TOKEN }}
       - name: 下载系统包
         run: |
@@ -115,14 +115,23 @@ jobs:
           elif [[ "$URL" != "$ORIGIN_URL" ]]; then
             aria2c -x16 -j$(nproc) -U "Mozilla/5.0" -d "$GITHUB_WORKSPACE" "$URL"
           fi
+          rclone copy -P OneDrive:/MI_Packages/RubbishBin/PreArtifacts/liuqin.txt "$GITHUB_WORKSPACE"
+          dos2unix "$GITHUB_WORKSPACE"/liuqin.txt
+          post_package=$(cat "$GITHUB_WORKSPACE"/liuqin.txt)
+          echo "post_package=$post_package" >> $GITHUB_ENV
         env:
           ORIGIN_URL: ${{ inputs.ORIGIN_URL }}
           URL: ${{ inputs.URL }}
+      - if: github.event.inputs.pack_type == 'true'
+        name: 下载 ${{ env.post_package }} 
+        run: |
+          if [[ -n "$post_package" ]]; then
+            rclone copy -P OneDrive:/MI_Packages/RubbishBin/PreArtifacts/"$post_package" "$GITHUB_WORKSPACE"/tools/payload_repack
+          fi
       - name: 自动构建
         run: |
-          export appToken="${{ secrets.appToken }}"
           device=$(echo "$MATRIX_CONTEXT" | jq -r '.list.device')
-          sudo bash build_local_HyperOS.sh $ORIGIN_URL $URL $device $custom_version $pack_type
+          sudo appToken="${{ secrets.appToken }}" TMPDIR="$GITHUB_WORKSPACE"/TMPDIR user=$(whoami) bash build_local_HyperOS.sh $ORIGIN_URL $URL $device $custom_version $pack_type "$post_package"
           cat "$GITHUB_WORKSPACE"/PackageInfo.txt >> $GITHUB_ENV
         env:
           MATRIX_CONTEXT: ${{ toJson(matrix) }}
@@ -157,7 +166,13 @@ jobs:
         name: 上传到OneDrive
         run: |
           rclone mkdir OneDrive:/MI_Packages/RubbishBin/DevPackages
-          rclone copy -P ./zip/* OneDrive:/MI_Packages/RubbishBin/DevPackages --buffer-size=1024M
+          for i in $(ls "$GITHUB_WORKSPACE"/zip); do
+            if [[ "$i" == "$bottom_package_name" ]]; then
+              rclone copy -P ./zip/$i OneDrive:/MI_Packages/RubbishBin/PreArtifacts --buffer-size=1024M
+            else
+              rclone copy -P ./zip/$i OneDrive:/MI_Packages/RubbishBin/DevPackages --buffer-size=1024M
+            fi
+          done
       - name: 发送 Onedrive 上传成功通知
         run: |
           curl -i -X POST -H 'Content-type':'application/json' -d '{"token":"${{ secrets.appToken }}","title":"Xiaomi Pad 6 Pro '"$date"'已构建完成","content":" **Xiaomi Pad 6 Pro '"$date"'已构建完成** \n \n **底包的 OS 版本：'"$bottom_os_date"'** \n \n **底包的 Android 安全更新版本：'"$bottom_security_patch"'** \n \n **底包的 Android 基线版本：'"$bottom_base_line"'** \n \n **移植包的 OS 版本：'"$target_os_date"'** \n \n **移植包的 Android 安全更新版本：'"$target_security_patch"'** \n \n **移植包的 Android 基线版本：'"$target_base_line"'** \n \n **包名：'"$NEW_PACKAGE_NAME"'** \n \n **MD5：'"$MD5"'** \n \n **下载地址为：[https://onedrive.zjw.js.cn/RubbishBin/DevPackages/'"$NEW_PACKAGE_NAME"'](https://onedrive.zjw.js.cn/RubbishBin/DevPackages/'"$NEW_PACKAGE_NAME"')** ","topic":"lahaina","template":"markdown"}' http://www.pushplus.plus/send || true

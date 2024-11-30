@@ -195,7 +195,7 @@ jobs:
             token: ${{ secrets.GH_TOKEN }}
       - name: 自动构建
         run: |
-          sudo bash build_local_HyperOS2.sh $URL $device $date $VK $Dolby $data $pack_type $NFC_Version
+          sudo appToken="${{ secrets.appToken }}" user=$(whoami) bash build_local_HyperOS2.sh $URL $device $date $VK $Dolby $data $pack_type $NFC_Version
           cat "$GITHUB_WORKSPACE"/PackageInfo.txt >> $GITHUB_ENV
         env:
           URL: ${{ inputs.URL }}
