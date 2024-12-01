@@ -116,7 +116,7 @@ jobs:
           fi
           echo "date=$date" >> "$GITHUB_ENV"
           ORIGIN_ZIP_NAME=$(echo "$ORIGIN_URL" | cut -d"?" -f1 | cut -d"/" -f5) 
-          TARGET_ZIP_NAME=$(echo "$URL" | cut -d"?" -f1 | cut -d"/" -f5) 
+          TARGET_ZIP_NAME=$(echo "$URL" | cut -d"?" -f1 | cut -d"/" -f5)
           rclone copy -P OneDrive:/MI_Packages/RubbishBin/BottomPackages/"$ORIGIN_ZIP_NAME" "$GITHUB_WORKSPACE"
           if [[ "$URL" == *PrePackages* ]]; then
             rclone copy -P OneDrive:/MI_Packages/RubbishBin/PrePackages/"$TARGET_ZIP_NAME" "$GITHUB_WORKSPACE"
@@ -127,7 +127,7 @@ jobs:
             rclone copy -P OneDrive:/MI_Packages/RubbishBin/PreArtifacts/star.txt "$GITHUB_WORKSPACE"
             dos2unix "$GITHUB_WORKSPACE"/star.txt
             post_package=$(cat "$GITHUB_WORKSPACE"/star.txt)
-          else
+          elif [[ "$device" == "venus" ]]; then
             rclone copy -P OneDrive:/MI_Packages/RubbishBin/PreArtifacts/venus.txt "$GITHUB_WORKSPACE"
             dos2unix "$GITHUB_WORKSPACE"/venus.txt
             post_package=$(cat "$GITHUB_WORKSPACE"/venus.txt)

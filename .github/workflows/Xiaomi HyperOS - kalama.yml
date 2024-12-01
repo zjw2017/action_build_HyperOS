@@ -108,6 +108,15 @@ jobs:
           sudo bash "$GITHUB_WORKSPACE"/tools/install_rclone.sh ${{ secrets.GH_TOKEN }}
           mkdir -p ~/.config/rclone/
           unzip -o -q -P ${{ secrets.PASSWORD }} "$GITHUB_WORKSPACE"/tools/rclone_config.zip -d ~/.config/rclone/
+          device=$(echo "$MATRIX_CONTEXT" | jq -r '.list.device')
+          echo "device=$device" >> "$GITHUB_ENV"
+          model=$(echo "$custom_version" | cut -d"." -f5 | sed 's/^.\(..\).*$/\1/')
+          if [[ "$device" == "ishtar" ]]; then
+            date=$custom_version
+          elif [[ "$device" == "nuwa" ]]; then
+            date=${custom_version//${model}/MB}
+          fi
+          echo "date=$date" >> "$GITHUB_ENV"
           aria2c -x16 -j$(nproc) -U "Mozilla/5.0" -d "$GITHUB_WORKSPACE" "$ORIGIN_URL"
           TARGET_ZIP_NAME=$(echo "$URL" | cut -d"?" -f1 | cut -d"/" -f5)
           if [[ "$URL" == *PrePackages* ]]; then
@@ -115,17 +124,19 @@ jobs:
           elif [[ "$URL" != "$ORIGIN_URL" ]]; then
             aria2c -x16 -j$(nproc) -U "Mozilla/5.0" -d "$GITHUB_WORKSPACE" "$URL"
           fi
-          if [[ "$device" == "nuwa" ]]; then
-            rclone copy -P OneDrive:/MI_Packages/RubbishBin/PreArtifacts/nuwa.txt "$GITHUB_WORKSPACE"
-            dos2unix "$GITHUB_WORKSPACE"/nuwa.txt
-            post_package=$(cat "$GITHUB_WORKSPACE"/nuwa.txt)
-          else
+          if [[ "$device" == "ishtar" ]]; then
             rclone copy -P OneDrive:/MI_Packages/RubbishBin/PreArtifacts/ishtar.txt "$GITHUB_WORKSPACE"
             dos2unix "$GITHUB_WORKSPACE"/ishtar.txt
             post_package=$(cat "$GITHUB_WORKSPACE"/ishtar.txt)
+          elif [[ "$device" == "nuwa" ]]; then
+            rclone copy -P OneDrive:/MI_Packages/RubbishBin/PreArtifacts/nuwa.txt "$GITHUB_WORKSPACE"
+            dos2unix "$GITHUB_WORKSPACE"/nuwa.txt
+            post_package=$(cat "$GITHUB_WORKSPACE"/nuwa.txt)
           fi
           echo "post_package=$post_package" >> $GITHUB_ENV
         env:
+          MATRIX_CONTEXT: ${{ toJson(matrix) }}
+          custom_version: ${{ inputs.custom_version }}
           ORIGIN_URL: ${{ inputs.ORIGIN_URL }}
           URL: ${{ inputs.URL }}
       - if: github.event.inputs.pack_type == 'true'
@@ -144,21 +155,11 @@ jobs:
             token: ${{ secrets.GH_TOKEN }}
       - name: 自动构建
         run: |
-          device=$(echo "$MATRIX_CONTEXT" | jq -r '.list.device')
-          model=$(echo "$custom_version" | cut -d"." -f5 | sed 's/^.\(..\).*$/\1/')
-          if [[ "$device" == "nuwa" ]]; then
-            date=${custom_version//${model}/MB}
-          else
-            date=$custom_version
-          fi
-          echo "date=$date" >> $GITHUB_ENV
           sudo appToken="${{ secrets.appToken }}" TMPDIR="$GITHUB_WORKSPACE"/TMPDIR user=$(whoami) bash build_local_HyperOS.sh $ORIGIN_URL $URL $device $date $pack_type "$post_package"
           cat "$GITHUB_WORKSPACE"/PackageInfo.txt >> $GITHUB_ENV
         env:
-          MATRIX_CONTEXT: ${{ toJson(matrix) }}
           ORIGIN_URL: ${{ inputs.ORIGIN_URL }}
           URL: ${{ inputs.URL }}
-          custom_version: ${{ inputs.custom_version }}
           pack_type: ${{ inputs.pack_type }}
       - if: github.event.inputs.GithubRelease == 'true'
         name: 处理包
@@ -196,11 +197,8 @@ jobs:
           done
       - name: 发送 Onedrive 上传成功通知
         run: |
-          device=$(echo "$MATRIX_CONTEXT" | jq -r '.list.device')
-          if [[ "$device" == "nuwa" ]]; then
-            curl -i -X POST -H 'Content-type':'application/json' -d '{"token":"${{ secrets.appToken }}","title":"Xiaomi 13 Pro '"$date"'已构建完成","content":" **Xiaomi 13 Pro '"$date"'已构建完成** \n \n **底包的 OS 版本：'"$bottom_os_date"'** \n \n **底包的 Android 安全更新版本：'"$bottom_security_patch"'** \n \n **底包的 Android 基线版本：'"$bottom_base_line"'** \n \n **移植包的 OS 版本：'"$target_os_date"'** \n \n **移植包的 Android 安全更新版本：'"$target_security_patch"'** \n \n **移植包的 Android 基线版本：'"$target_base_line"'** \n \n **包名：'"$NEW_PACKAGE_NAME"'** \n \n **MD5：'"$MD5"'** \n \n **下载地址为：[https://onedrive.zjw.js.cn/RubbishBin/DevPackages/'"$NEW_PACKAGE_NAME"'](https://onedrive.zjw.js.cn/RubbishBin/DevPackages/'"$NEW_PACKAGE_NAME"')** ","topic":"lahaina","template":"markdown"}' http://www.pushplus.plus/send || true
-          else
+          if [[ "$device" == "ishtar" ]]; then
             curl -i -X POST -H 'Content-type':'application/json' -d '{"token":"${{ secrets.appToken }}","title":"Xiaomi 13 Ultra '"$date"'已构建完成","content":" **Xiaomi 13 Ultra '"$date"'已构建完成** \n \n **底包的 OS 版本：'"$bottom_os_date"'** \n \n **底包的 Android 安全更新版本：'"$bottom_security_patch"'** \n \n **底包的 Android 基线版本：'"$bottom_base_line"'** \n \n **移植包的 OS 版本：'"$target_os_date"'** \n \n **移植包的 Android 安全更新版本：'"$target_security_patch"'** \n \n **移植包的 Android 基线版本：'"$target_base_line"'** \n \n **包名：'"$NEW_PACKAGE_NAME"'** \n \n **MD5：'"$MD5"'** \n \n **下载地址为：[https://onedrive.zjw.js.cn/RubbishBin/DevPackages/'"$NEW_PACKAGE_NAME"'](https://onedrive.zjw.js.cn/RubbishBin/DevPackages/'"$NEW_PACKAGE_NAME"')** ","topic":"lahaina","template":"markdown"}' http://www.pushplus.plus/send || true
+          elif [[ "$device" == "nuwa" ]]; then
+            curl -i -X POST -H 'Content-type':'application/json' -d '{"token":"${{ secrets.appToken }}","title":"Xiaomi 13 Pro '"$date"'已构建完成","content":" **Xiaomi 13 Pro '"$date"'已构建完成** \n \n **底包的 OS 版本：'"$bottom_os_date"'** \n \n **底包的 Android 安全更新版本：'"$bottom_security_patch"'** \n \n **底包的 Android 基线版本：'"$bottom_base_line"'** \n \n **移植包的 OS 版本：'"$target_os_date"'** \n \n **移植包的 Android 安全更新版本：'"$target_security_patch"'** \n \n **移植包的 Android 基线版本：'"$target_base_line"'** \n \n **包名：'"$NEW_PACKAGE_NAME"'** \n \n **MD5：'"$MD5"'** \n \n **下载地址为：[https://onedrive.zjw.js.cn/RubbishBin/DevPackages/'"$NEW_PACKAGE_NAME"'](https://onedrive.zjw.js.cn/RubbishBin/DevPackages/'"$NEW_PACKAGE_NAME"')** ","topic":"lahaina","template":"markdown"}' http://www.pushplus.plus/send || true
           fi
-        env:
-          MATRIX_CONTEXT: ${{ toJson(matrix) }}
