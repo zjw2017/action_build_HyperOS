@@ -112,7 +112,7 @@ jobs:
           echo "device=$device" >> "$GITHUB_ENV"
           model=$(echo "$custom_version" | cut -d"." -f5 | sed 's/^.\(..\).*$/\1/')
           if [[ "$device" == "ishtar" ]]; then
-            date=$custom_version
+            date=${custom_version//${model}/MA}
           elif [[ "$device" == "nuwa" ]]; then
             date=${custom_version//${model}/MB}
           fi
