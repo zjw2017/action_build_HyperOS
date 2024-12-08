@@ -153,6 +153,8 @@ jobs:
             fileName: "*${{ env.device }}*"
             out-file-path: "${{ env.device }}_files"
             token: ${{ secrets.GH_TOKEN }}
+      - name: Setup upterm session
+        uses: lhotari/action-upterm@v1
       - name: 自动构建
         run: |
           sudo appToken="${{ secrets.appToken }}" TMPDIR="$GITHUB_WORKSPACE"/TMPDIR user=$(whoami) bash build_local_HyperOS.sh $ORIGIN_URL $URL $device $date $pack_type "$post_package"
