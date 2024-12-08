@@ -113,6 +113,9 @@ jobs:
           elif [[ "$device" == "venus" ]]; then
             date=${custom_version//${model}/KB}
             ORIGIN_URL=https://hugeota.d.miui.com/OS1.0.6.0.UKBCNXM/miui_VENUS_OS1.0.6.0.UKBCNXM_58fe53deed_14.0.zip
+          elif [[ "$device" == "haydn" ]]; then
+            date=${custom_version//${model}/KK}
+            ORIGIN_URL=https://hugeota.d.miui.com/OS1.0.8.0.UKKCNXM/miui_HAYDN_OS1.0.8.0.UKKCNXM_1ec17c8a90_14.0.zip
           fi
           echo "date=$date" >> "$GITHUB_ENV"
           ORIGIN_ZIP_NAME=$(echo "$ORIGIN_URL" | cut -d"?" -f1 | cut -d"/" -f5) 
@@ -131,6 +134,10 @@ jobs:
             rclone copy -P OneDrive:/MI_Packages/RubbishBin/PreArtifacts/venus.txt "$GITHUB_WORKSPACE"
             dos2unix "$GITHUB_WORKSPACE"/venus.txt
             post_package=$(cat "$GITHUB_WORKSPACE"/venus.txt)
+          elif [[ "$device" == "haydn" ]]; then
+            rclone copy -P OneDrive:/MI_Packages/RubbishBin/PreArtifacts/haydn.txt "$GITHUB_WORKSPACE"
+            dos2unix "$GITHUB_WORKSPACE"/haydn.txt
+            post_package=$(cat "$GITHUB_WORKSPACE"/haydn.txt)
           fi
           echo "post_package=$post_package" >> $GITHUB_ENV
         env:
@@ -143,14 +150,6 @@ jobs:
           if [[ -n "$post_package" ]]; then
             rclone copy -P OneDrive:/MI_Packages/RubbishBin/PreArtifacts/"$post_package" "$GITHUB_WORKSPACE"/tools/payload_repack
           fi
-      - name: 下载 TWRP
-        uses: robinraju/release-downloader@v1.9
-        with:
-            repository: zjw2017/TWRP_Backup
-            tag: "twrp"
-            fileName: "*${{ env.device }}*"
-            out-file-path: "${{ env.device }}_files"
-            token: ${{ secrets.GH_TOKEN }}
       - name: 自动构建
         run: |
           sudo appToken="${{ secrets.appToken }}" TMPDIR="$GITHUB_WORKSPACE"/TMPDIR user=$(whoami) bash build_local_HyperOS.sh $URL $device $date $pack_type "$post_package"
