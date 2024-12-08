@@ -126,24 +126,27 @@ jobs:
           elif [[ "$URL" != "$ORIGIN_URL" ]]; then
             aria2c -x16 -j$(nproc) -U "Mozilla/5.0" -d "$GITHUB_WORKSPACE" "$URL"
           fi
-          if [[ "$device" == "star" ]]; then
-            rclone copy -P OneDrive:/MI_Packages/RubbishBin/PreArtifacts/star.txt "$GITHUB_WORKSPACE"
-            dos2unix "$GITHUB_WORKSPACE"/star.txt
-            post_package=$(cat "$GITHUB_WORKSPACE"/star.txt)
-          elif [[ "$device" == "venus" ]]; then
-            rclone copy -P OneDrive:/MI_Packages/RubbishBin/PreArtifacts/venus.txt "$GITHUB_WORKSPACE"
-            dos2unix "$GITHUB_WORKSPACE"/venus.txt
-            post_package=$(cat "$GITHUB_WORKSPACE"/venus.txt)
-          elif [[ "$device" == "haydn" ]]; then
-            rclone copy -P OneDrive:/MI_Packages/RubbishBin/PreArtifacts/haydn.txt "$GITHUB_WORKSPACE"
-            dos2unix "$GITHUB_WORKSPACE"/haydn.txt
-            post_package=$(cat "$GITHUB_WORKSPACE"/haydn.txt)
+          if [[ "$pack_type" == "true" ]]; then
+            if [[ "$device" == "star" ]]; then
+              rclone copy -P OneDrive:/MI_Packages/RubbishBin/PreArtifacts/star.txt "$GITHUB_WORKSPACE"
+              dos2unix "$GITHUB_WORKSPACE"/star.txt
+              post_package=$(cat "$GITHUB_WORKSPACE"/star.txt)
+            elif [[ "$device" == "venus" ]]; then
+              rclone copy -P OneDrive:/MI_Packages/RubbishBin/PreArtifacts/venus.txt "$GITHUB_WORKSPACE"
+              dos2unix "$GITHUB_WORKSPACE"/venus.txt
+              post_package=$(cat "$GITHUB_WORKSPACE"/venus.txt)
+            elif [[ "$device" == "haydn" ]]; then
+              rclone copy -P OneDrive:/MI_Packages/RubbishBin/PreArtifacts/haydn.txt "$GITHUB_WORKSPACE"
+              dos2unix "$GITHUB_WORKSPACE"/haydn.txt
+              post_package=$(cat "$GITHUB_WORKSPACE"/haydn.txt)
+            fi
+            echo "post_package=$post_package" >> $GITHUB_ENV
           fi
-          echo "post_package=$post_package" >> $GITHUB_ENV
         env:
           MATRIX_CONTEXT: ${{ toJson(matrix) }}
           custom_version: ${{ inputs.custom_version }}
           URL: ${{ inputs.URL }}
+          pack_type: ${{ inputs.pack_type }}
       - if: github.event.inputs.pack_type == 'true'
         name: 下载 ${{ env.post_package }} 
         run: |

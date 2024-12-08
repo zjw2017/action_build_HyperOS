@@ -118,10 +118,12 @@ jobs:
           elif [[ "$URL" != "$ORIGIN_URL" ]]; then
             aria2c -x16 -j$(nproc) -U "Mozilla/5.0" -d "$GITHUB_WORKSPACE" "$URL"
           fi
-          rclone copy -P OneDrive:/MI_Packages/RubbishBin/PreArtifacts/liuqin.txt "$GITHUB_WORKSPACE"
-          dos2unix "$GITHUB_WORKSPACE"/liuqin.txt
-          post_package=$(cat "$GITHUB_WORKSPACE"/liuqin.txt)
-          echo "post_package=$post_package" >> $GITHUB_ENV
+          if [[ "$pack_type" == "true" ]]; then
+            rclone copy -P OneDrive:/MI_Packages/RubbishBin/PreArtifacts/liuqin.txt "$GITHUB_WORKSPACE"
+            dos2unix "$GITHUB_WORKSPACE"/liuqin.txt
+            post_package=$(cat "$GITHUB_WORKSPACE"/liuqin.txt)
+            echo "post_package=$post_package" >> $GITHUB_ENV
+          fi
         env:
           MATRIX_CONTEXT: ${{ toJson(matrix) }}
           custom_version: ${{ inputs.custom_version }}

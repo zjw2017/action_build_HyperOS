@@ -114,20 +114,23 @@ jobs:
           fi
           echo "date=$date" >> "$GITHUB_ENV"
           aria2c -x16 -j$(nproc) -U "Mozilla/5.0" -d "$GITHUB_WORKSPACE" "$ORIGIN_URL"
-          if [[ "$device" == "ishtar" ]]; then
-            rclone copy -P OneDrive:/MI_Packages/RubbishBin/PreArtifacts/ishtar.txt "$GITHUB_WORKSPACE"
-            dos2unix "$GITHUB_WORKSPACE"/ishtar.txt
-            post_package=$(cat "$GITHUB_WORKSPACE"/ishtar.txt)
-          elif [[ "$device" == "nuwa" ]]; then
-            rclone copy -P OneDrive:/MI_Packages/RubbishBin/PreArtifacts/nuwa.txt "$GITHUB_WORKSPACE"
-            dos2unix "$GITHUB_WORKSPACE"/nuwa.txt
-            post_package=$(cat "$GITHUB_WORKSPACE"/nuwa.txt)
+          if [[ "$pack_type" == "true" ]]; then
+            if [[ "$device" == "ishtar" ]]; then
+              rclone copy -P OneDrive:/MI_Packages/RubbishBin/PreArtifacts/ishtar.txt "$GITHUB_WORKSPACE"
+              dos2unix "$GITHUB_WORKSPACE"/ishtar.txt
+              post_package=$(cat "$GITHUB_WORKSPACE"/ishtar.txt)
+            elif [[ "$device" == "nuwa" ]]; then
+              rclone copy -P OneDrive:/MI_Packages/RubbishBin/PreArtifacts/nuwa.txt "$GITHUB_WORKSPACE"
+              dos2unix "$GITHUB_WORKSPACE"/nuwa.txt
+              post_package=$(cat "$GITHUB_WORKSPACE"/nuwa.txt)
+            fi
+            echo "post_package=$post_package" >> $GITHUB_ENV
           fi
-          echo "post_package=$post_package" >> $GITHUB_ENV
         env:
           MATRIX_CONTEXT: ${{ toJson(matrix) }}
           custom_version: ${{ inputs.custom_version }}
           ORIGIN_URL: ${{ inputs.ORIGIN_URL }}
+          pack_type: ${{ inputs.pack_type }}
       - if: github.event.inputs.pack_type == 'true'
         name: 下载 ${{ env.post_package }} 
         run: |
