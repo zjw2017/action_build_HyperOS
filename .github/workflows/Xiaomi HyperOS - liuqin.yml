@@ -62,7 +62,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 删除 ${{ inputs.custom_version }} 的 Github Release
-        uses: ncipollo/release-action@main
+        uses: ncipollo/release-action@v1.14.0
         with:
           owner: Human-Machine-Matrix
           repo: action_build_liuqin_system
@@ -155,7 +155,7 @@ jobs:
           echo "$NEW_PACKAGE_NAME" > file.log
       - if: github.event.inputs.GithubRelease == 'true'
         name: 上传到Github Release
-        uses: ncipollo/release-action@main
+        uses: ncipollo/release-action@v1.14.0
         with:
           owner: Human-Machine-Matrix
           repo: action_build_liuqin_system
