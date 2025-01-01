@@ -64,7 +64,7 @@ jobs:
       - name: 删除 ${{ inputs.custom_version }} 的 Github Release
         uses: ncipollo/release-action@main
         with:
-          owner: zjw2017
+          owner: Human-Machine-Matrix
           repo: action_build_liuqin_system
           name: "${{ inputs.custom_version }}"
           tag: "${{ inputs.custom_version }}"
@@ -99,7 +99,7 @@ jobs:
       - name: 检出仓库文件
         uses: actions/checkout@v4.1.1
         with:
-          repository: zjw2017/action_build_liuqin_system
+          repository: Human-Machine-Matrix/action_build_liuqin_system
           ref: main
           token: ${{ secrets.GH_TOKEN }}
       - name: 下载系统包
@@ -129,6 +129,7 @@ jobs:
           custom_version: ${{ inputs.custom_version }}
           ORIGIN_URL: ${{ inputs.ORIGIN_URL }}
           URL: ${{ inputs.URL }}
+          pack_type: ${{ inputs.pack_type }}
       - if: github.event.inputs.pack_type == 'true'
         name: 下载 ${{ env.post_package }} 
         run: |
@@ -156,7 +157,7 @@ jobs:
         name: 上传到Github Release
         uses: ncipollo/release-action@main
         with:
-          owner: zjw2017
+          owner: Human-Machine-Matrix
           repo: action_build_liuqin_system
           artifacts: ${{ github.workspace }}/GithubRelease/*
           name: "${{ inputs.custom_version }}"
