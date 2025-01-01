@@ -154,7 +154,7 @@ jobs:
             rclone copy -P OneDrive:/MI_Packages/RubbishBin/PreArtifacts/"$post_package" "$GITHUB_WORKSPACE"/tools/payload_repack
           fi
       - name: 下载 TWRP
-        uses: robinraju/release-downloader@v1.9
+        uses: robinraju/release-downloader@v1.11
         with:
             repository: zjw2017/TWRP_Backup
             tag: "twrp"

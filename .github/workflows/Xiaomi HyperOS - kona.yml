@@ -186,7 +186,7 @@ jobs:
         env:
           URL: ${{ inputs.URL }}
       - name: 下载 TWRP
-        uses: robinraju/release-downloader@v1.9
+        uses: robinraju/release-downloader@v1.11
         with:
             repository: zjw2017/TWRP_Backup
             tag: "twrp"
