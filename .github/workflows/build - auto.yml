@@ -110,7 +110,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 检出 version.json
-        uses: actions/checkout@v4.1.7
+        uses: actions/checkout@v4.2.2
         with:
           repository: zjw2017/TWRP_Backup
           token: ${{ secrets.GH_TOKEN }}
