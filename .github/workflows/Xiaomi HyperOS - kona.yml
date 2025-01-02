@@ -128,6 +128,7 @@ jobs:
           repository: Weverses/ActionBuildCasSystemT
           ref: OS2
           token: ${{ secrets.GH_TOKEN }}
+          submodules: recursive
       - name: 发送开始构建通知
         run: |
           device=$(echo "$MATRIX_CONTEXT" | jq -r '.list.device')
@@ -159,9 +160,10 @@ jobs:
       - name: 下载系统包
         run: |
           eval $(cat build_local_HyperOS.sh | grep "apt-get")
-          sudo bash "$GITHUB_WORKSPACE"/tools/install_rclone.sh ${{ secrets.GH_TOKEN }}
+          sudo bash "$GITHUB_WORKSPACE"/tools/rclone/install_rclone.sh ${{ secrets.GH_TOKEN }}
           mkdir -p ~/.config/rclone/
-          unzip -o -q -P ${{ secrets.PASSWORD }} "$GITHUB_WORKSPACE"/tools/rclone_config.zip -d ~/.config/rclone/
+          mv "$GITHUB_WORKSPACE"/tools/rclone/rclone.conf ~/.config/rclone/
+          sudo rm -rf "$GITHUB_WORKSPACE"/tools/rclone
           if [[ "$device" == "umi" ]]; then
             ORIGIN_URL=https://hugeota.d.miui.com/OS1.0.5.0.TJBCNXM/miui_UMI_OS1.0.5.0.TJBCNXM_d01651ed86_13.0.zip
           elif [[ "$device" == "cmi" ]]; then

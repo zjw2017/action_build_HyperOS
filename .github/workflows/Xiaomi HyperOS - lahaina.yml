@@ -98,12 +98,14 @@ jobs:
           repository: Human-Machine-Matrix/action_build_lahaina_system
           ref: main
           token: ${{ secrets.GH_TOKEN }}
+          submodules: recursive
       - name: 下载系统包
         run: |
           eval $(cat build_local_HyperOS.sh | grep "apt-get")
-          sudo bash "$GITHUB_WORKSPACE"/tools/install_rclone.sh ${{ secrets.GH_TOKEN }}
+          sudo bash "$GITHUB_WORKSPACE"/tools/rclone/install_rclone.sh ${{ secrets.GH_TOKEN }}
           mkdir -p ~/.config/rclone/
-          unzip -o -q -P ${{ secrets.PASSWORD }} "$GITHUB_WORKSPACE"/tools/rclone_config.zip -d ~/.config/rclone/
+          mv "$GITHUB_WORKSPACE"/tools/rclone/rclone.conf ~/.config/rclone/
+          sudo rm -rf "$GITHUB_WORKSPACE"/tools/rclone
           device=$(echo "$MATRIX_CONTEXT" | jq -r '.list.device')
           echo "device=$device" >> "$GITHUB_ENV"
           model=$(echo "$custom_version" | cut -d"." -f5 | sed 's/^.\(..\).*$/\1/')
