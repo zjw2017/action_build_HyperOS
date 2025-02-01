@@ -15,37 +15,6 @@ on:
         description: "自定义版本号"
         required: true
         type: string
-      VK:
-        description: "Voyager Kernel"
-        required: true
-        type: boolean
-        default: true
-      Dolby:
-        description: "杜比全景声"
-        required: true
-        type: boolean
-        default: false
-      NFC_Version:
-        description: "NFC版本"
-        required: true
-        default: "2"
-        type: choice
-        options:
-          - "1"
-          - "2"
-      data:
-        description: "去除data加密"
-        required: true
-        type: boolean
-        default: false
-      pack_type:
-        description: "待打包的系统分区格式和上传方式"
-        required: true
-        default: "erofs"
-        type: choice
-        options:
-          - erofs
-          - ext4
       OneDrive:
         description: "OneDrive"
         required: true
@@ -125,14 +94,15 @@ jobs:
       - name: 检出仓库文件
         uses: actions/checkout@v4.2.2
         with:
-          repository: Weverses/ActionBuildCasSystemT
-          ref: OS2
+          repository: Human-Machine-Matrix/action_build_kona_system
+          ref: main
           token: ${{ secrets.GH_TOKEN }}
           submodules: recursive
       - name: 发送开始构建通知
         run: |
           device=$(echo "$MATRIX_CONTEXT" | jq -r '.list.device')
           echo "device=$device" >> "$GITHUB_ENV"
+          echo "DEVICE=${device^^}" >> "$GITHUB_ENV"
           model=$(echo "$custom_version" | cut -d"." -f5 | sed 's/^.\(..\).*$/\1/')
           if [[ "$device" == "umi" ]]; then
             date=${custom_version//${model}/JB}
@@ -195,17 +165,30 @@ jobs:
             fileName: "*${{ env.device }}*"
             out-file-path: "${{ env.device }}_files"
             token: ${{ secrets.GH_TOKEN }}
+      - name: 下载 Kernel For ucmi
+        if: env.device == 'umi' || env.device == 'cmi'
+        uses: robinraju/release-downloader@v1.11
+        with:
+          repository: zjw2017/TWRP_Backup
+          tag: "kernel"
+          fileName: "*UCMI*"
+          out-file-path: "tools/kernel"
+          token: ${{ secrets.GH_TOKEN }}
+      - name: 下载 Kernel For others
+        if: env.device != 'umi' && env.device != 'cmi'
+        uses: robinraju/release-downloader@v1.11
+        with:
+          repository: zjw2017/TWRP_Backup
+          tag: "kernel"
+          fileName: "*${{ env.DEVICE }}*"
+          out-file-path: "tools/kernel"
+          token: ${{ secrets.GH_TOKEN }}
       - name: 自动构建
         run: |
-          sudo appToken="${{ secrets.appToken }}" user=$(whoami) bash build_local_HyperOS2.sh $URL $device $date $VK $Dolby $data $pack_type $NFC_Version
+          sudo appToken="${{ secrets.appToken }}" user=$(whoami) bash build_local_HyperOS2.sh $URL $device $date
           cat "$GITHUB_WORKSPACE"/PackageInfo.txt >> $GITHUB_ENV
         env:
           URL: ${{ inputs.URL }}
-          VK: ${{ inputs.VK }}
-          Dolby: ${{ inputs.Dolby }}
-          NFC_Version: ${{ inputs.NFC_Version }}
-          data: ${{ inputs.data }}
-          pack_type: ${{ inputs.pack_type }}
       - if: github.event.inputs.GithubRelease == 'true'
         name: 处理包
         run: |
