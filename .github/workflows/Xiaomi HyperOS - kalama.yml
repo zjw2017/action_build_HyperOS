@@ -160,7 +160,7 @@ jobs:
             token: ${{ secrets.GH_TOKEN }}
       - name: 自动构建
         run: |
-          sudo appToken="${{ secrets.appToken }}" TMPDIR="$GITHUB_WORKSPACE"/TMPDIR user=$(whoami) bash build_local_HyperOS.sh $ORIGIN_URL $URL $device $date $pack_type "$post_package"
+          sudo appToken="${{ secrets.appToken }}" TMPDIR="$(pwd)"/TMPDIR user=$(whoami) bash build_local_HyperOS.sh $ORIGIN_URL $URL $device $date $pack_type "$post_package"
           cat "$GITHUB_WORKSPACE"/PackageInfo.txt >> $GITHUB_ENV
         env:
           ORIGIN_URL: ${{ inputs.ORIGIN_URL }}
