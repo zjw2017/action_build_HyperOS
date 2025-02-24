@@ -111,7 +111,7 @@ jobs:
           model=$(echo "$custom_version" | cut -d"." -f5 | sed 's/^.\(..\).*$/\1/')
           if [[ "$device" == "star" ]]; then
             date=${custom_version//${model}/KA}
-            ORIGIN_URL=https://hugeota.d.miui.com/OS1.0.9.0.UKACNXM/miui_STAR_OS1.0.9.0.UKACNXM_2d6cd56f90_14.0.zip
+            ORIGIN_URL=https://hugeota.d.miui.com/OS1.0.13.0.UKACNXM/miui_STAR_OS1.0.13.0.UKACNXM_b7ceb79cd7_14.0.zip
           elif [[ "$device" == "venus" ]]; then
             date=${custom_version//${model}/KB}
             ORIGIN_URL=https://hugeota.d.miui.com/OS1.0.12.0.UKBCNXM/miui_VENUS_OS1.0.12.0.UKBCNXM_77aa77ab20_14.0.zip
