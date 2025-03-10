@@ -158,7 +158,7 @@ jobs:
         env:
           URL: ${{ inputs.URL }}
       - name: 下载 TWRP
-        uses: robinraju/release-downloader@v1.11
+        uses: robinraju/release-downloader@v1.12
         with:
             repository: zjw2017/TWRP_Backup
             tag: "twrp"
@@ -167,7 +167,7 @@ jobs:
             token: ${{ secrets.GH_TOKEN }}
       - name: 下载 Kernel For ucmi
         if: env.device == 'umi' || env.device == 'cmi'
-        uses: robinraju/release-downloader@v1.11
+        uses: robinraju/release-downloader@v1.12
         with:
           repository: zjw2017/TWRP_Backup
           tag: "kernel"
@@ -176,7 +176,7 @@ jobs:
           token: ${{ secrets.GH_TOKEN }}
       - name: 下载 Kernel For others
         if: env.device != 'umi' && env.device != 'cmi'
-        uses: robinraju/release-downloader@v1.11
+        uses: robinraju/release-downloader@v1.12
         with:
           repository: zjw2017/TWRP_Backup
           tag: "kernel"
