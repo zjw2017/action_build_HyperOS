@@ -122,7 +122,7 @@ jobs:
           new_version_aurora=$(echo "${{ needs.check-version-aurora.outputs.aurora_URL }}" | cut -d"/" -f4)
           jq --arg newversion1 "$new_version_thor" --arg newversion2 "$new_version_ishtar" --arg newversion3 "$new_version_vermeer" --arg newversion4 "$new_version_aurora" '.thor = $newversion1 | .ishtar = $newversion2 | .vermeer = $newversion3 | .aurora = $newversion4' version.json > temp.json && mv temp.json version.json
           git config --global user.email "30484319+zjw2017@users.noreply.github.com"
-          git config --global user.name "柚稚的孩纸"
+          git config --global user.name "柚稚"
           touch commit.log
           echo "更新 version.json" >commit.log
           echo "" >>commit.log
