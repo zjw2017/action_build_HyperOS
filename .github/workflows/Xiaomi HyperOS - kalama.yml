@@ -97,7 +97,7 @@ jobs:
           remove-android: "true"
           remove-haskell: "true"
       - name: 检出仓库文件
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v5.0.0
         with:
           repository: Human-Machine-Matrix/action_build_kalama_system
           ref: main
