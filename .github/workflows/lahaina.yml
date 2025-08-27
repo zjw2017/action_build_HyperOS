@@ -1,0 +1,133 @@
+name: lahaina
+on:
+  workflow_dispatch:
+    inputs:
+      build_matrix:
+        description: "构建阵列，以英文逗号分隔"
+        type: string
+        default: "all"
+        required: true
+      TARGET_URL:
+        description: "移植包的下载地址"
+        required: true
+        type: string
+      custom_version:
+        description: "自定义版本号"
+        required: true
+        type: string
+
+jobs:
+  build_matrix:
+    name: 设置构建阵列
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: 设置构建阵列
+        id: set-matrix
+        run: |
+          input_var="${{ github.event.inputs.build_matrix }}"
+          if [ "$input_var" = "all" ]; then
+            input_var="venus,star,haydn"
+          fi
+          IFS=',' read -ra devices <<< "$input_var"
+          json_output="{\"list\":["
+          for device in "${devices[@]}"; do
+            json_output+="{\"device\":\"$device\"},"
+          done
+          json_output=${json_output%,}
+          json_output+="]}"
+          echo "matrix=$json_output" >> $GITHUB_OUTPUT
+  build:
+    name: 自动构建
+    runs-on: ubuntu-latest
+    needs: build_matrix
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.build_matrix.outputs.matrix) }}
+    steps:
+      - name: 精简无用组件
+        run: |
+          docker rmi `docker images -q` || true
+          sudo rm -rf /usr/share/dotnet /etc/mysql /etc/php /etc/sudo apt/sources.list.d || true
+          sudo apt -y purge azure-cli ghc* zulu* hhvm llvm* firefox google* dotnet* powershell openjdk* mysql* php* || true
+          sudo apt -y autoremove --purge || true
+          sudo apt -y autoclean || true
+          sudo apt clean || true
+      - name: 最大化并挂载构建空间
+        uses: easimon/maximize-build-space@master
+        with:
+          root-reserve-mb: 1024
+          swap-size-mb: 6144
+          remove-dotnet: "true"
+          temp-reserve-mb: 1024
+          remove-android: "true"
+          remove-haskell: "true"
+      - name: 检出仓库文件
+        uses: actions/checkout@v5.0.0
+        with:
+          repository: Human-Machine-Matrix/action_build_kalama_system
+          ref: main
+          token: ${{ secrets.GH_TOKEN }}
+          submodules: recursive
+      - name: 下载系统包
+        run: |
+          eval $(cat build_local_HyperOS.sh | grep "apt-get")
+          sudo bash "$GITHUB_WORKSPACE"/tools/rclone/install_rclone.sh ${{ secrets.GH_TOKEN }}
+          mkdir -p ~/.config/rclone/
+          mv "$GITHUB_WORKSPACE"/tools/rclone/rclone.conf ~/.config/rclone/
+          sudo rm -rf "$GITHUB_WORKSPACE"/tools/rclone
+          device=$(echo "$MATRIX_CONTEXT" | jq -r '.list.device')
+          echo "device=$device" >> "$GITHUB_ENV"
+          version=$custom_version
+          if [[ "$version" == "AUTO" ]]; then
+            version=$(echo $TARGET_URL | cut -d"/" -f4)
+          fi
+          model=$(echo "$version" | cut -d"." -f5 | sed 's/^.\(..\).*$/\1/')
+          if [[ "$device" == "nuwa" ]]; then
+            version=${version//${model}CNXM/MBCNXM}
+          elif [[ "$device" == "ishtar" ]]; then
+            version=${version//${model}CNXM/MACNXM}
+          elif [[ "$device" == "star" ]]; then
+            version=${version//${model}CNXM/KACNXM}
+            ORIGIN_URL=https://hugeota.d.miui.com/OS2.0.1.0.UKACNXM/star-ota_full-OS2.0.1.0.UKACNXM-user-14.0-57d9b8fc09.zip
+          elif [[ "$device" == "venus" ]]; then
+            version=${version//${model}CNXM/KBCNXM}
+            ORIGIN_URL=https://hugeota.d.miui.com/OS2.0.2.0.UKBCNXM/venus-ota_full-OS2.0.2.0.UKBCNXM-user-14.0-f875a6f2f6.zip
+          elif [[ "$device" == "haydn" ]]; then
+            version=${version//${model}CNXM/KKCNXM}
+            ORIGIN_URL=https://hugeota.d.miui.com/OS1.0.13.0.UKKCNXM/haydn-ota_full-OS1.0.13.0.UKKCNXM-user-14.0-e540db568a.zip
+          elif [[ "$device" == "liuqin" ]]; then
+            version=${version//${model}CNXM/MYCNXM}
+          elif [[ "$device" == "diting" ]]; then
+            version=${version//${model}CNXM/LFCNXM}
+          elif [[ "$device" == "thor" ]]; then
+            version=${version//${model}CNXM/LACNXM}
+          elif [[ "$device" == "rubens" ]]; then
+            version=${version//${model}CNXM/LNCNXM}
+          fi
+          echo "version=$version" >> "$GITHUB_ENV"
+          ORIGIN_ZIP_NAME=$(echo "$ORIGIN_URL" | cut -d"?" -f1 | cut -d"/" -f5)
+          rclone copy -P OneDrive:/MI_Packages/RubbishBin/BottomPackages/"$ORIGIN_ZIP_NAME" "$GITHUB_WORKSPACE"
+          aria2c -x16 -j$(nproc) -U "Mozilla/5.0" -d "$GITHUB_WORKSPACE" "$TARGET_URL"
+        env:
+          MATRIX_CONTEXT: ${{ toJson(matrix) }}
+          custom_version: ${{ inputs.custom_version }}
+          TARGET_URL: ${{ inputs.TARGET_URL }}
+      - name: 下载 TWRP
+        uses: robinraju/release-downloader@v1.12
+        with:
+            repository: zjw2017/TWRP_Backup
+            tag: "twrp"
+            fileName: "*${{ env.device }}*"
+            out-file-path: "${{ env.device }}_files"
+            token: ${{ secrets.GH_TOKEN }}
+      - name: 自动构建
+        run: |
+          sudo env appToken="${{ secrets.appToken }}" TMPDIR="$(pwd)"/TMPDIR user="$(whoami)" bash build_local_HyperOS.sh "$TARGET_URL" "$device" "$version" false ""
+        env:
+          TARGET_URL: ${{ inputs.TARGET_URL }}
+      - name: 上传到OneDrive
+        run: |
+          rclone mkdir OneDrive:/MI_Packages/RubbishBin/DevPackages
+          rclone copy -P ./zip/* OneDrive:/MI_Packages/RubbishBin/DevPackages --buffer-size=1024M
